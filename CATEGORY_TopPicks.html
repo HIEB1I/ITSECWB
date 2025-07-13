@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Top Picks ‒ KALYE WEST</title>
+
+  <style>
+    :root{--nav-height:110px;--brand-black:#000;--light-gray:#f5f5f7;--mid-gray:#dadada;font-family:Arial,Helvetica,sans-serif;}*{box-sizing:border-box;margin:0;padding:0;}body{background:#fff;color:var(--brand-black);}a{color:inherit;text-decoration:none;}header{height:var(--nav-height);display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--mid-gray);}
+    /* ── LEFT header side: search  */
+    .search-btn{font-size:26px;cursor:pointer;}
+    /* ── CENTER: logo  */
+    .logo{text-align:center;margin:20px 0;}
+    .logo img{width:150px;height:auto;margin-left:50px;transition:opacity 0.2s ease;}
+    /* ── RIGHT header utilities  */
+    .utils{display:flex;align-items:center;gap:20px;}
+    .utils select,.utils i{font-size:14px;cursor:pointer;}
+    /* ───── NAV BAR  ───── */
+    nav{display:flex;justify-content:center;gap:50px;margin-top:-1px;border-bottom:1px solid var(--mid-gray);}
+    nav a{padding:18px 0;font-size:13px;letter-spacing:.5px;}
+    nav a.active{font-weight:bold;border-bottom:2px solid var(--brand-black);}
+    /* ───── PAGE HEADING  ───── */
+    .hero{background:var(--light-gray);padding:40px 0;text-align:center;}
+    .hero h1{font-size:50px;}
+    /* ───── FILTER / SORT BAR  ───── */
+    .controls{display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--mid-gray);}
+    .filter-btn{display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer;}
+    .sort-wrap{font-size:14px;display:flex;align-items:center;gap:6px;}
+    .sort-wrap select{padding:4px 6px;}
+    /* ───── PRODUCT GRID  ───── */
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:40px;padding:40px 24px;}
+    .card{text-align:center;}
+    .card img{width:100%;object-fit:contain;border:1px solid var(--mid-gray);}
+    .card .title{margin-top:10px;font-size:12px;text-transform:uppercase;}
+    .card .brand{font-size:10px;color:#666;margin-top:3px;}
+    .card .price{font-size:12px;margin-top:4px;}
+    footer{display:flex;justify-content:space-between;align-items:center;padding:20px 40px;border-top:1px solid #ccc;font-size:14px;}
+    footer .social i{margin:0 10px;font-size:18px;cursor:pointer;}
+    footer .copyright{font-size:14px;}
+    /* Search Overlay background (fades in smoothly) */
+    .search-overlay{position:fixed;top:0;left:0;width:100%;height:100vh;background:rgba(0,0,0,0.5);opacity:0;pointer-events:none;z-index:9999;display:flex;justify-content:center;align-items:flex-start;transition:opacity 0.3s ease;}
+    /* Only the search bar slides down */
+    .search-box{background:white;width:100%;height:13vh;transform:translateY(-100%);transition:transform 0.4s ease;display:flex;align-items:center;justify-content:center;padding:0 20px;}
+    /* When active, fade in overlay and slide down search bar */
+    .search-overlay.active{opacity:1;pointer-events:auto;}
+    .search-overlay.active .search-box{transform:translateY(0);}
+    /* Inner input container */
+    .search-input-wrapper{position:relative;width:40%;}
+    .search-input-wrapper i{position:absolute;top:50%;left:12px;transform:translateY(-50%);color:#888;}
+    .search-input-wrapper input{width:100%;padding:10px 10px 10px 40px;font-size:18px;border:1px solid #ccc;border-radius:4px;}
+    /* Close (X) button */
+    .close-btn{background:none;border:none;font-size:30px;color:black;cursor:pointer;margin-left:20px;}
+    /* Filter Overlay background */
+    .filter-overlay{position:fixed;top:0;right:0;height:100vh;width:100%;background:rgba(0,0,0,0.5);display:none;z-index:10000;}
+    /* Sidebar panel */
+    .filter-sidebar{background:white;width:300px;height:100%;position:absolute;right:-300px;top:0;padding:20px;transition:right 0.4s ease;overflow-y:auto;}
+    /* Active class to show the sidebar */
+    .filter-overlay.active{display:block;}
+    .filter-overlay.active .filter-sidebar{right:0;}
+    /* Header */
+    .filter-header{position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:20px;border-bottom:1px solid #ccc;padding-bottom:10px;}
+    .filter-header h2{margin:0;font-size:22px;}
+    /* Close button still on the right */
+    .close-filter{position:absolute;right:0;top:0;background:none;border:none;font-size:26px;cursor:pointer;}
+    /* Filter option */
+    .filter-group{margin-bottom:20px;}
+    .filter-option{font-weight:bold;cursor:pointer;margin-bottom:8px;}
+    /* Sub-options hidden by default */
+    .sub-options{display:none;padding-left:10px;}
+    .sub-options label{display:block;font-size:14px;margin:4px 0;}
+    /* Buttons */
+    .filter-actions{display:flex;justify-content:space-between;padding:10px 0;position:absolute;bottom:20px;left:20px;right:20px;background:#fff;}
+    .clear-btn,.apply-btn{flex:1;padding:8px 16px;border:none;cursor:pointer;font-weight:bold;}
+    .clear-btn{background:#ccc;color:black;margin-right:10px;}
+    .apply-btn{background:black;color:white;}
+    .color-circle{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle;}
+    /* Hide default radio button */
+    .sub-options input[type="radio"]{appearance:none;-webkit-appearance:none;-moz-appearance:none;position:absolute;}
+    /* Style label */
+    .sub-options label{display:flex;align-items:center;font-size:14px;margin:4px 0;padding:4px 0;border-bottom:2px solid transparent;cursor:pointer;}
+    /* When selected, underline */
+    .sub-options input[type="radio"]:checked+.color-circle+*{border-bottom:2px solid black;}
+
+  </style>
+
+  <!-- Font Awesome for quick icons (search, filter, user, cart, socials) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+  <!-- ╭───────────────────  HEADER  ───────────────────╮ -->
+  <header>
+    <div class="search-btn"><i class="fa-solid fa-magnifying-glass"></i></div>
+
+    <div class="logo">
+      <a href="HOME_Homepage.html"><img src="Logos/KW Logo.png" alt="KALYE WEST"></a>
+    </div>
+
+    <div class="utils">
+      <!-- currency dropdown -->
+      <select>
+        <option selected>Php</option>
+        <option>USD</option>
+        <option>KRW</option>
+      </select>
+
+        <!-- account -->
+        <a href="PROFILE_User.html">
+            <i class="fa-regular fa-user"></i>
+        </a>
+
+        <!-- cart -->
+        <a href="CART_ViewCart.html">
+            <i class="fa-solid fa-bag-shopping"></i>
+        </a>
+
+    </div>
+  </header>
+
+  <!-- ╭───────────────  CATEGORY NAV  ───────────────╮ -->
+  <nav>
+    <a href="CATEGORY_TopPicks.html"    class="active">TOP PICKS</a>
+    <a href="CATEGORY_NewArivals.html">NEW ARRIVALS</a>
+    <a href="CATEGORY_Tees.html">TEES</a>
+    <a href="CATEGORY_Bottoms.html">BOTTOMS</a>
+    <a href="CATEGORY_Layering.html">LAYERING</a>
+    <a href="CATEGORY_Accessories.html">ACCESSORIES</a>
+  </nav>
+
+  <!-- ╭───────────────  HERO / TITLE  ───────────────╮ -->
+  <section class="hero">
+    <h1><strong>KALYE WEST</strong> TOP PICKS</h1>
+  </section>
+
+  <!-- ╭───────────────  FILTER & SORT  ──────────────╮ -->
+  <div class="controls">
+    <div class="filter-btn"><i class="fa-solid fa-sliders"></i> Filter</div>
+
+    <div class="sort-wrap">
+      <span>Sort By:</span>
+      <select>
+        <option selected>Price, low to high</option>
+        <option>Price, high to low</option>
+      </select>
+    </div>
+  </div>
+
+    <!-- ╭───────────────  PRODUCT GRID  ───────────────╮ -->
+    <section class="grid">
+    <!-- ‑‑‑ Product 1 ‑‑‑ -->
+    <a href="Products.html" class="card">
+        <img src="CategoryProducts/Cat_TP_1.png" alt="YEAR OF THE SNAKE TEE">
+        <div class="title">“YEAR OF THE SNAKE” TEE</div>
+        <div class="brand">Kalye West</div>
+        <div class="price">₱1,270.00</div>
+    </a>
+
+    <!-- ‑‑‑ Product 2 ‑‑‑ -->
+    <a href="Products.html" class="card">
+        <img src="CategoryProducts/Cat_TP_2.png" alt="COLLIDE TEE">
+        <div class="title">“COLLIDE” TEE</div>
+        <div class="brand">Kalye West</div>
+        <div class="price">₱1,070.00</div>
+    </a>
+
+    <!-- ‑‑‑ Product 3 ‑‑‑ -->
+    <a href="Products.html" class="card">
+        <img src="CategoryProducts/Cat_TP_3.png" alt="MS MOTHERLAND TEE">
+        <div class="title">“Mꜱ MOTHERLAND” TEE</div>
+        <div class="brand">Kalye West</div>
+        <div class="price">₱1,070.00</div>
+    </a>
+    </section>
+
+    <!-- ╭───────────────────  FOOTER  ──────────────────╮ -->
+    <footer>
+    <div class="social">
+        <a href="https://www.facebook.com/mnlaofficial/" target="_blank">
+        <i class="fa-brands fa-facebook"></i>
+        </a>
+        <a href="https://www.instagram.com/mnlaofficial/?hl=en" target="_blank">
+        <i class="fa-brands fa-instagram"></i>
+        </a>
+        <a href="https://www.tiktok.com/@mnlaofficial?_t=ZS-8xh9NMarft4&_r=1" target="_blank">
+        <i class="fa-brands fa-tiktok"></i>
+        </a>
+    </div>
+    <div class="copyright">2025, KALYE WEST</div>
+    </footer>
+
+    <!-- Search Overlay -->
+    <div class="search-overlay" id="searchOverlay">
+    <div class="search-box">
+        <div class="search-input-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" placeholder="Search..." />
+        </div>
+        <button class="close-btn" id="closeSearch">&times;</button>
+    </div>
+    </div>
+
+
+    <script>
+    const searchBtn = document.querySelector('.search-btn');
+    const searchOverlay = document.getElementById('searchOverlay');
+    const closeSearch = document.getElementById('closeSearch');
+
+    searchBtn.addEventListener('click', () => {
+        searchOverlay.classList.add('active');
+    });
+
+    closeSearch.addEventListener('click', () => {
+        searchOverlay.classList.remove('active');
+    });
+    </script>
+
+    <!-- FILTER OVERLAY -->
+    <div class="filter-overlay" id="filterOverlay">
+    <div class="filter-sidebar">
+        <div class="filter-header">
+        <h2>Filter</h2>
+        <button class="close-filter" id="closeFilter">&times;</button>
+        </div>
+
+        <!-- Filter Option: Availability -->
+        <div class="filter-group">
+        <div class="filter-option" onclick="toggleSubOptions('availability-options')">Availability</div>
+        <div class="sub-options" id="availability-options">
+            <label><input type="checkbox"> In Stock</label>
+            <label><input type="checkbox"> Out of Stock</label>
+        </div>
+        </div>
+
+        <!-- Filter Option: Color -->
+        <div class="filter-group">
+        <div class="filter-option" onclick="toggleSubOptions('color-options')">Color</div>
+        <div class="sub-options" id="color-options">
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #E52B50;"></span><span>AMARANTH</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #293133;"></span><span>ANTHRACITE</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #2E2E2E;"></span><span>CAVIAR</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #4B4B4B;"></span><span>CHARCOAL GREY</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #00A36C;"></span><span>JADE</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #8A9A5B;"></span><span>MOSS GREEN</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #000080;"></span><span>NAVY</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #F5DEB3;"></span><span>OAT</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #708238;"></span><span>OLIVE</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #5D3A00;"></span><span>RIDDLER</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #4169E1;"></span><span>ROYAL BLUE</span></label>
+            <label><input type="radio" name="color"><span class="color-circle" style="background-color: #FFFFFF; border: 1px solid #ccc;"></span><span>WHITE</span></label>
+        </div>
+        </div>
+
+        <!-- Filter Option: Size -->
+        <div class="filter-group">
+        <div class="filter-option" onclick="toggleSubOptions('size-options')">Size</div>
+        <div class="sub-options" id="size-options">
+            <label><input type="checkbox"> SMALL</label>
+            <label><input type="checkbox"> MEDIUM</label>
+            <label><input type="checkbox"> LARGE</label>
+            <label><input type="checkbox"> 2X-LARGE</label>
+            <label><input type="checkbox"> 3X-LARGE</label>
+            <label><input type="checkbox"> 4X-LARGE</label>
+            <label><input type="checkbox"> EXTRA - LARGE</label>
+            <label><input type="checkbox"> EXTRA - SMALL</label>
+        </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="filter-actions" id="filterActions">
+        <button class="clear-btn" id="clearOrRemoveBtn">Remove All</button>
+        <button class="apply-btn">Apply</button>
+        </div>
+
+    </div>
+    </div>
+
+    <script>
+    const filterBtn = document.querySelector('.filter-btn');
+    const filterOverlay = document.getElementById('filterOverlay');
+    const closeFilter = document.getElementById('closeFilter');
+    const subOptionIds = ['availability-options', 'color-options', 'size-options'];
+    const clearOrRemoveBtn = document.getElementById('clearOrRemoveBtn');
+
+    // Show overlay + reset all sub-option visibility
+    filterBtn.addEventListener('click', () => {
+    filterOverlay.classList.add('active');
+    subOptionIds.forEach(id => {
+        document.getElementById(id).style.display = 'none';
+    });
+    clearOrRemoveBtn.textContent = 'Remove All';
+    });
+
+    // Hide overlay
+    closeFilter.addEventListener('click', () => {
+    filterOverlay.classList.remove('active');
+    });
+
+    // Toggle sub-option display
+    function toggleSubOptions(id) {
+    const subOptions = document.getElementById(id);
+    const isOpen = subOptions.style.display === 'block';
+    
+    // Close all others first
+    subOptionIds.forEach(otherId => {
+        if (otherId !== id) {
+        document.getElementById(otherId).style.display = 'none';
+        }
+    });
+
+    subOptions.style.display = isOpen ? 'none' : 'block';
+
+    // Update button label
+    clearOrRemoveBtn.textContent = subOptions.style.display === 'block' ? 'Clear' : 'Remove All';
+    }
+
+    // Optional: clear all selections (functionality stub)
+    clearOrRemoveBtn.addEventListener('click', () => {
+    document.querySelectorAll('.sub-options input').forEach(input => input.checked = false);
+    });
+    </script>
+</body>
+</html>
