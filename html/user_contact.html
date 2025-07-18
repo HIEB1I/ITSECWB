@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>User Contact Info</title>
+</head>
+<body>
+  <h2>User Contact Information</h2>
+
+  <!-- Display current session userID -->
+  <?php
+  session_start();
+  if (!isset($_SESSION['userID'])) {
+      echo "You are not logged in. <a href='login.html'>Login</a>";
+      exit();
+  }
+  echo "<p><strong>Current User ID:</strong> " . $_SESSION['userID'] . "</p>";
+  ?>
+
+  <!-- Contact Info Form -->
+  <form action="../php/save_contact.php" method="post">
+    Address: <input type="text" name="Address" required><br>
+    Postal Code: <input type="text" name="Postal" required><br>
+    City: <input type="text" name="City" required><br>
+    Region:
+    <select name="Region" required>
+      <option value="Ilocos">Ilocos</option>
+      <option value="Cagayan Valley">Cagayan Valley</option>
+      <option value="Central Luzon">Central Luzon</option>
+      <option value="CALABARZON">CALABARZON</option>
+      <option value="MIMAROPA">MIMAROPA</option>
+      <option value="Bicol">Bicol</option>
+      <option value="Western Visayas">Western Visayas</option>
+      <option value="Central Visayas">Central Visayas</option>
+      <option value="Eastern Visayas">Eastern Visayas</option>
+      <option value="Zamboanga Peninsula">Zamboanga Peninsula</option>
+      <option value="Northern Mindanao">Northern Mindanao</option>
+      <option value="Davao">Davao</option>
+      <option value="SOCCSKSARGEN">SOCCSKSARGEN</option>
+      <option value="Caraga">Caraga</option>
+      <option value="Bangsamoro">Bangsamoro</option>
+      <option value="Cordillera">Cordillera</option>
+      <option value="NCR">NCR</option>
+    </select><br>
+    Phone: <input type="text" name="Phone" required><br><br>
+
+    <input type="submit" value="Next">
+  </form>
+</body>
+</html>

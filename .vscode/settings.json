@@ -15,5 +15,9 @@
             "password": "password1",
             "connectionTimeout": 30
         }
+    ],
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "mysql-connector-j-9.3.0.jar"
     ]
 }
