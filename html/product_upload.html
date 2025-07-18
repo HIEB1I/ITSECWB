@@ -15,21 +15,29 @@
   echo "<p><strong>Current User ID:</strong> " . $_SESSION['userID'] . "</p>";
   ?>
 
-  <form action="../php/upload_product.php" method="post" enctype="multipart/form-data">
-    Product Name: <input type="text" name="ProductName" required><br>
-    Size:
-    <select name="Size" required>
-      <option value="Extra-Small">Extra-Small</option>
-      <option value="Small">Small</option>
-      <option value="Medium">Medium</option>
-      <option value="Large">Large</option>
-      <option value="Extra-Large">Extra-Large</option>
-    </select><br>
-    Description: <br><textarea name="Description" rows="4" cols="50" required></textarea><br>
-    Quantity Available: <input type="number" name="QuantityAvail" required><br>
-    Price: <input type="number" step="0.01" name="Price" required><br>
-    Product Image: <input type="file" name="Image" accept="image/*" required><br><br>
-    <input type="submit" value="Upload Product">
-  </form>
+ <form action="../php/upload_product.php" method="post" enctype="multipart/form-data">
+  Product Name: <input type="text" name="ProductName" required><br>
+  Size:
+  <select name="Size" required>
+    <option value="Extra-Small">Extra-Small</option>
+    <option value="Small">Small</option>
+    <option value="Medium">Medium</option>
+    <option value="Large">Large</option>
+    <option value="Extra-Large">Extra-Large</option>
+  </select><br>
+
+  Category:
+  <select name="Category" required>
+    <option value="TEES">TEES</option>
+    <option value="BOTTOMS">BOTTOMS</option>
+    <option value="LAYERING">LAYERING</option>
+  </select><br>
+
+  Description: <br><textarea name="Description" rows="4" cols="50" required></textarea><br>
+  Quantity Available: <input type="number" name="QuantityAvail" required><br>
+  Price: <input type="number" step="0.01" name="Price" required><br>
+  Product Image: <input type="file" name="Image" accept="image/*" required><br><br>
+  <input type="submit" value="Upload Product">
+</form>
 </body>
 </html>

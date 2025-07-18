@@ -23,11 +23,10 @@ echo "<a href='view_cart.php'>🛒 View Cart</a><br><br>";
 while ($row = $result->fetch_assoc()) {
     echo "<div style='border:1px solid #ccc; padding:10px; margin:10px'>";
     echo "<strong>{$row['ProductName']}</strong><br>";
-    echo "Size: {$row['Size']}<br>";
+    echo "Category: {$row['Category']}<br>"; 
     echo "Description: {$row['Description']}<br>";
     echo "Available: {$row['QuantityAvail']}<br>";
     echo "Price: ₱" . number_format($row['Price'], 2) . "<br>";
-
     // Show image
     if (!empty($row['Image'])) {
         $imgData = base64_encode($row['Image']);

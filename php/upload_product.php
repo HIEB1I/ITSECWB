@@ -32,6 +32,7 @@ if ($result->num_rows > 0) {
 // Get form data
 $productName = $_POST['ProductName'];
 $size = $_POST['Size'];
+$category = $_POST['Category'];
 $description = $_POST['Description'];
 $quantity = $_POST['QuantityAvail'];
 $price = $_POST['Price'];
@@ -41,9 +42,13 @@ $image = $_FILES['Image']['tmp_name'];
 $imageData = file_get_contents($image);
 
 // Insert into DB
-$stmt = $conn->prepare("INSERT INTO PRODUCT (productID, ProductName, Size, Description, QuantityAvail, Price, Image) VALUES (?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("ssssids", $productID, $productName, $size, $description, $quantity, $price, $imageData);
+$stmt = $conn->prepare("INSERT INTO PRODUCT 
+    (productID, ProductName, Size, Category, Description, QuantityAvail, Price, Image) 
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
+$stmt->bind_param("sssssids", 
+    $productID, $productName, $size, $category, $description, $quantity, $price, $imageData);
+    
 if ($stmt->execute()) {
    header("Location: view_products.php");
 exit();
