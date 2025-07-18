@@ -19,6 +19,7 @@
       padding: 0;
     }
 
+    
     body {
       background: #fff;
       color: var(--brand-black);
@@ -186,11 +187,26 @@
       text-align: center;
     }
 
+ html, body {
+  height: 100%;
+}
+
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.content {
+  flex: 1;
+}
+
 
   </style>
 </head>
 <body>
-
+  <div class="page-wrapper">
+  <div class="content">
   <!-- Header -->
   <header>
     <div class="logo">
@@ -209,9 +225,7 @@
 
   <!-- Navigation -->
   <nav>
-    <a href="CATEGORY_TopPicks.html" class="active">TOP PICKS</a>
-    <a href="CATEGORY_NewArivals.html">NEW ARRIVALS</a>
-    <a href="CATEGORY_Tees.html">TEES</a>
+    <a href="CATEGORY_Tees.html"  class="active">TEES</a>
     <a href="CATEGORY_Bottoms.html">BOTTOMS</a>
     <a href="CATEGORY_Layering.html">LAYERING</a>
   </nav>
@@ -242,8 +256,7 @@
         <button onclick="proceedToCheckout()">Check out</button>
       </div>
     </div>
-
-
+    </div>
   </div>
 
   <!-- Footer -->
@@ -256,6 +269,8 @@
     <div class="copyright">2025, KALYE WEST</div>
   </footer>
 
+  </div>
+
   <!-- JavaScript Logic -->
   <script>
     function formatPrice(num) {
@@ -266,6 +281,13 @@
       const cart = JSON.parse(localStorage.getItem('cart')) || [];
       const tableBody = document.querySelector('#cartTable tbody');
       tableBody.innerHTML = '';
+      if (cart.length === 0) {
+        const emptyRow = document.createElement('tr');
+        emptyRow.innerHTML = `<td colspan="5" style="text-align:center; padding: 40px; font-size: 16px; color: #666;">Your cart is empty</td>`;
+        tableBody.appendChild(emptyRow);
+        document.getElementById('estimatedTotal').textContent = formatPrice(0);
+        return; // stop further processing
+      }
       cart.forEach((item, index) => {
         const total = parseFloat(item.price) * item.quantity;
         const row = document.createElement('tr');
@@ -323,8 +345,8 @@
     }
 
     function proceedToCheckout() {
-      alert("Proceeding to checkout with selected items...");
-    }
+    window.location.href = "CART_PlaceOrder.html";
+  }
 
     loadCart();
   </script>
