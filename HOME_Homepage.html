@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home ‒ KALYE WEST</title>
+  <style>
+    :root {
+      --nav-height: 110px;
+      --brand-black: #000;
+      --light-gray: #f5f5f7;
+      --mid-gray: #dadada;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #fff; color: var(--brand-black); }
+    a { color: inherit; text-decoration: none; }
+    header {
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      border-bottom: 1px solid var(--mid-gray);
+    }
+    .logo {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .logo img {
+      width: 150px;
+      height: auto;
+      margin-left: 100px;
+    }
+    .utils { display: flex; align-items: center; gap: 20px; }
+    .utils select, .utils i { font-size: 14px; cursor: pointer; }
+
+    nav {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      border-bottom: 1px solid var(--mid-gray);
+    }
+    nav a {
+      padding: 18px 0;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    .section-title {
+    text-align: center;
+    padding: 40px 0 10px;
+    font-size: 20px;
+    }
+
+    .section-title .bold {
+    font-weight: bold;
+    }
+
+    .section-title .regular {
+    font-weight: normal;
+    }
+
+    .grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px; /* Adjust this to control the spacing */
+    padding: 15px 24px;
+    }
+    .card {
+    width: 200px; /* match your image max-width */
+    text-align: center;
+    }
+    .card img {
+    width: 90%;
+    max-width: 200px;
+    margin: 0 auto;
+    object-fit: contain;
+    border: 1px solid var(--mid-gray);
+    display: block;
+    }
+    .card .title {
+      margin-top: 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+    .card .brand {
+      font-size: 10px;
+      color: #666;
+      margin-top: 3px;
+    }
+    .card .price {
+      font-size: 12px;
+      margin-top: 4px;
+    }
+    .view-all {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+      margin-bottom: 40px;
+    }
+    .view-all a {
+      padding: 6px 18px;
+      background: #0C619B;
+      color: white;
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 40px;
+      border-top: 1px solid #ccc;
+      font-size: 14px;
+    }
+    footer .social i {
+      margin: 0 10px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <a href="HOME_Homepage.html"><img src="Logos/KW Logo.png" alt="KALYE WEST"></a>
+  </div>
+  <div class="utils">
+    <select>
+      <option selected>Php</option>
+      <option>USD</option>
+      <option>KRW</option>
+    </select>
+    <a href="PROFILE_User.html"><i class="fa-regular fa-user"></i></a>
+    <a href="CART_ViewCart.html"><i class="fa-solid fa-bag-shopping"></i></a>
+  </div>
+</header>
+
+<nav>
+  <a href="CATEGORY_TopPicks.html">TOP PICKS</a>
+  <a href="CATEGORY_NewArivals.html">NEW ARRIVALS</a>
+  <a href="CATEGORY_Tees.html">TEES</a>
+  <a href="CATEGORY_Bottoms.html">BOTTOMS</a>
+  <a href="CATEGORY_Layering.html">LAYERING</a>
+</nav>
+
+<!-- CATEGORY SECTIONS -->
+<!-- TOP PICKS -->
+<section>
+  <div class="section-title">
+  <span class="bold">KALYE WEST</span> <span class="regular">TOP PICKS</span>
+</div>
+  <div class="grid">
+    <a href="Products.html?id=TP1" class="card">
+      <img src="CategoryProducts/Cat_TP_1.png" alt="">
+      <div class="title">“YEAR OF THE SNAKE” TEE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,270.00</div>
+    </a>
+    <a href="Products.html?id=TP2" class="card">
+      <img src="CategoryProducts/Cat_TP_2.png" alt="">
+      <div class="title">“COLLIDE” TEE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,070.00</div>
+    </a>
+   <a href="Products.html?id=TP3" class="card">
+      <img src="CategoryProducts/Cat_TP_3.png" alt="">
+      <div class="title">“MS MOTHERLAND” TEE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,070.00</div>
+    </a>
+  </div>
+  <div class="view-all"><a href="CATEGORY_TopPicks.html">View All</a></div>
+</section>
+
+<!-- NEW ARRIVALS -->
+<section>
+  <div class="section-title">
+  <span class="bold">KALYE WEST</span> <span class="regular">NEW ARRIVALS</span>
+</div>
+
+  <div class="grid">
+    <a href="Products.html?id=NA1" class="card">
+      <img src="CategoryProducts/Cat_NA_1.png" alt="">
+      <div class="title">STRIPED BLACK TEE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱970.00</div>
+    </a>
+    <a href="Products.html?id=NA2" class="card">
+      <img src="CategoryProducts/Cat_NA_2.png" alt="">
+      <div class="title">MARVELYN LS SHIRT</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,050.00</div>
+    </a>
+  </div>
+  <div class="view-all"><a href="CATEGORY_NewArivals.html">View All</a></div>
+</section>
+
+<!-- TEES -->
+<section>
+  <div class="section-title">
+    <span class="bold">KALYE WEST</span> <span class="regular">TEES</span>
+  </div>
+
+  <!-- ╭───────────────  PRODUCT GRID  ───────────────╮ --> 
+  <div class="grid">
+    <!-- ‑‑‑ Product 1 ‑‑‑ -->
+    <a href="Products.html?id=T1" class="card">
+      <img src="CategoryProducts/Cat_T_1.png" alt="STRIPED LONGSLEEVE TEE IN NAVY/CRIMSON">
+      <div class="title">STRIPED LONGSLEEVE TEE<br>IN NAVY/CRIMSON</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱970.00</div>
+    </a>
+
+    <!-- ‑‑‑ Product 2 ‑‑‑ -->
+    <a href="Products.html?id=T2" class="card">
+      <img src="CategoryProducts/Cat_T_2.png" alt="NAUGHTY N' NICE DRAGON'S LUCK TEE IN AMARANTH">
+      <div class="title">NAUGHTY N' NICE "DRAGON'S LUCK" TEE<br>IN AMARANTH</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱970.00</div>
+    </a>
+
+    <!-- ‑‑‑ Product 3 ‑‑‑ -->
+    <a href="Products.html?id=T3" class="card">
+      <img src="CategoryProducts/Cat_T_3.png" alt="CHOKE TEE IN WHITE">
+      <div class="title">"CHOKE" TEE<br>IN WHITE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱970.00</div>
+    </a>
+  </div>
+
+  <!-- View All Link -->
+  <div class="view-all"><a href="CATEGORY_Tees.html">View All</a></div>
+</section>
+
+<!-- BOTTOMS -->
+<section>
+  <div class="section-title">
+    <span class="bold">KALYE WEST</span> <span class="regular">BOTTOMS</span>
+  </div>
+
+  <!-- Product Grid -->
+  <div class="grid">
+    <!-- Product 1 -->
+    <a href="Products.html?id=B1" class="card">
+      <img src="CategoryProducts/Cat_B_1.png" alt="M+ OVERPOCKET PHAT PANTS IN OAT">
+      <div class="title">M+ OVERPOCKET PHAT PANTS<br>IN OAT</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,770.00</div>
+    </a>
+
+    <!-- Product 2 -->
+    <a href="Products.html?id=B2" class="card">
+      <img src="CategoryProducts/Cat_B_2.png" alt="DOUBLE KNEE PHAT PANTS IN GRAPHITE">
+      <div class="title">DOUBLE KNEE PHAT PANTS<br>IN GRAPHITE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,670.00</div>
+    </a>
+
+    <!-- Product 3 -->
+    <a href="Products.html?id=B3" class="card">
+      <img src="CategoryProducts/Cat_B_3.png" alt="M+ TEMPLE BLOOM PHAT PANTS IN CAVIAR">
+      <div class="title">"M+ TEMPLE BLOOM" PHAT PANTS<br>IN CAVIAR</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,770.00</div>
+    </a>
+  </div>
+
+  <!-- View All Link -->
+  <div class="view-all"><a href="CATEGORY_Bottoms.html">View All</a></div>
+</section>
+
+<!-- LAYERING -->
+<section>
+  <div class="section-title">
+    <span class="bold">KALYE WEST</span> <span class="regular">LAYERING</span>
+  </div>
+
+  <!-- Product Grid -->
+  <div class="grid">
+    <!-- Product 1 -->
+    <a href="Products.html?id=L1" class="card">
+      <img src="CategoryProducts/Cat_L_1.png" alt="FLOW BOMBER JACKET IN CARBON">
+      <div class="title">"FLOW" BOMBER JACKET<br>IN CARBON</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱2,670.00</div>
+    </a>
+
+    <!-- Product 2 -->
+    <a href="Products.html?id=L2" class="card">
+      <img src="CategoryProducts/Cat_L_2.png" alt="QUINCY IN DENIM SLATE">
+      <div class="title">QUINCY<br>IN DENIM SLATE</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,670.00</div>
+    </a>
+
+    <!-- Product 3 -->
+    <a href="Products.html?id=L" class="card">
+      <img src="CategoryProducts/Cat_L_3.png" alt="S/S DRAPE V3 IN CHARCOAL GREY">
+      <div class="title">S/S DRAPE V3<br>IN CHARCOAL GREY</div>
+      <div class="brand">Kalye West</div>
+      <div class="price">₱1,070.00</div>
+    </a>
+  </div>
+
+  <!-- View All Link -->
+  <div class="view-all"><a href="CATEGORY_Layering.html">View All</a></div>
+</section>
+
+
+<!-- Footer -->
+<footer>
+  <div class="social">
+    <a href="https://www.facebook.com/mnlaofficial/" target="_blank"><i class="fa-brands fa-facebook"></i></a>
+    <a href="https://www.instagram.com/mnlaofficial/" target="_blank"><i class="fa-brands fa-instagram"></i></a>
+    <a href="https://www.tiktok.com/@mnlaofficial" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
+  </div>
+  <div class="copyright">2025, KALYE WEST</div>
+</footer>
+
+</body>
+</html>
