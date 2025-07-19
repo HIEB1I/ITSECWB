@@ -4,17 +4,16 @@ if (!isset($_SESSION['userID'])) {
     exit("Access denied.");
 }
 
-$productID = $_POST['productID'];
-$quantity = $_POST['Quantity'];
-
 require_once 'db_connect.php'; 
 
 $userID = $_SESSION['userID'];
+$productID = $_POST['productID'];
+$quantity = (int)$_POST['Quantity']; // Force quantity to be integer
 
-$conn->autocommit(FALSE); // Start transaction
+$conn->autocommit(FALSE); // Begin transaction
 
 try {
-    // Step 1: Check if the user has an active cart
+    // 🔹 Step 1: Get or create active cart
     $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
     $stmt->bind_param("s", $userID);
     $stmt->execute();
@@ -23,41 +22,44 @@ try {
     if ($result->num_rows > 0) {
         $cartID = $result->fetch_assoc()['cartID'];
     } else {
-        // Step 2: Generate new cart ID
-        $result = $conn->query("SELECT cartID FROM CART ORDER BY cartID DESC LIMIT 1");
-        $lastID = $result->num_rows > 0 ? $result->fetch_assoc()['cartID'] : 'C00000';
-        $num = (int)substr($lastID, 1) + 1;
-        $cartID = 'C' . str_pad($num, 5, '0', STR_PAD_LEFT);
+        // Generate new cart ID
+        $res = $conn->query("SELECT cartID FROM CART ORDER BY cartID DESC LIMIT 1");
+        $lastID = $res->num_rows > 0 ? $res->fetch_assoc()['cartID'] : 'C00000';
+        $nextNum = (int)substr($lastID, 1) + 1;
+        $cartID = 'C' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
 
-        // Step 3: Insert new cart
+        // Insert new cart
         $insertCart = $conn->prepare("INSERT INTO CART (cartID, Total, Purchased, ref_userID) VALUES (?, 0, FALSE, ?)");
         $insertCart->bind_param("ss", $cartID, $userID);
         if (!$insertCart->execute()) {
-            throw new Exception("Failed to create cart.");
+            throw new Exception("Failed to create new cart.");
         }
+        $insertCart->close();
     }
+    $stmt->close();
 
-    // Step 4: Generate new cartItemsID
-    $result = $conn->query("SELECT cartItemsID FROM CART_ITEMS ORDER BY cartItemsID DESC LIMIT 1");
-    $lastCI = $result->num_rows > 0 ? $result->fetch_assoc()['cartItemsID'] : 'CI00000';
-    $num = (int)substr($lastCI, 2) + 1;
-    $cartItemsID = 'CI' . str_pad($num, 5, '0', STR_PAD_LEFT);
+    // 🔹 Step 2: Generate new cartItemsID
+    $res = $conn->query("SELECT cartItemsID FROM CART_ITEMS ORDER BY cartItemsID DESC LIMIT 1");
+    $lastCI = $res->num_rows > 0 ? $res->fetch_assoc()['cartItemsID'] : 'CI00000';
+    $nextCI = (int)substr($lastCI, 2) + 1;
+    $cartItemsID = 'CI' . str_pad($nextCI, 5, '0', STR_PAD_LEFT);
 
-    // Step 5: Insert into CART_ITEMS
+    // 🔹 Step 3: Insert cart item
     $addItem = $conn->prepare("INSERT INTO CART_ITEMS (cartItemsID, QuantityOrdered, ref_productID, ref_cartID) VALUES (?, ?, ?, ?)");
-    $addItem->bind_param("ssss", $cartItemsID, $quantity, $productID, $cartID);
+    $addItem->bind_param("siss", $cartItemsID, $quantity, $productID, $cartID);
     if (!$addItem->execute()) {
         throw new Exception("Failed to add item to cart.");
     }
+    $addItem->close();
 
-    // ✅ All successful — commit the transaction
+    // ✅ Step 4: Commit transaction
     $conn->commit();
+
     echo "<h3>✅ Item added to cart!</h3>";
     echo "<a href='view_products.php'>⬅ Back to Products</a> | <a href='view_cart.php'>🛒 View Cart</a>";
 
 } catch (Exception $e) {
-    // ❌ Something went wrong — rollback
-    $conn->rollback();
+    $conn->rollback(); // ❌ Rollback on failure
     echo "<h3>❌ Error: " . $e->getMessage() . "</h3>";
 }
 

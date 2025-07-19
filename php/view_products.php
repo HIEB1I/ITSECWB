@@ -20,6 +20,13 @@ $userID = $_SESSION['userID'];
 
 <h2>Welcome, User ID: <?= $_SESSION['userID'] ?></h2>
 
+<?php if ($_SESSION['role'] === 'Admin'): ?>
+  <form action="edit_user.php" method="get" style="display:inline;">
+    <button type="submit">👥 Manage Users</button>
+  </form>
+<?php endif; ?>
+
+
 <form action="../html/product_upload.html" method="get" style="display:inline;">
   <button type="submit">➕ Upload Product</button>
 </form>
@@ -82,10 +89,27 @@ while ($row = $result->fetch_assoc()) {
   echo "<input type='submit' value='Add to Cart'>";
   echo "</form>";
 
+  if (in_array($_SESSION['role'], ['Admin', 'Staff'])) {
+    echo "<form action='edit_product.php' method='get' style='display:inline;'>
+            <input type='hidden' name='productID' value='{$row['productID']}'>
+            <input type='submit' value='✏ Edit'>
+          </form>";}
+
+
   echo "</div>";
+
+
+
+
 }
 $conn->close();
+
+
 ?>
+<form action="logout.php" method="post">
+  <button type="submit">🚪 Logout</button>
+</form>
+
 
 </body>
 </html>

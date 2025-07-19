@@ -1,18 +1,10 @@
 <?php
 session_start();
+require_once 'db_connect.php';  // Uses session-based user (Admin/Staff only)
 
-require_once 'db_connect.php'; 
-
-$userID = $_SESSION['userID'];
-
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "dbadm";
-
-$conn = new mysqli($host, $user, $password, $dbname);
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// Prevent customers from accessing
+if ($_SESSION['role'] !== 'Admin' && $_SESSION['role'] !== 'Staff') {
+    die("<h3>❌ Access denied. You are not allowed to upload products.</h3>");
 }
 
 // ✅ Begin transaction
