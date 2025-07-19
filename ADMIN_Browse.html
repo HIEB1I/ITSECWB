@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Browse ‒ KALYE WEST</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #000;
+    }
+
+    body {
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 220px;
+      background: #111;
+      color: white;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 1000;
+    }
+
+    .sidebar h4 {
+      margin: 30px 0 10px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      margin: 8px 0;
+      display: block;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .sidebar a.active {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .sidebar a:hover {
+      opacity: 0.7;
+    }
+
+    .sidebar .logout {
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Main content */
+    .main-content {
+      margin-left: 220px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    main {
+      padding: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    main iframe {
+      width: 100%;
+      height: 100vh;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div>
+      <h4>DASHBOARD</h4>
+      <a href="ADMIN_Dashboard.html">Product</a>
+      <a href="ADMIN_Orders.html">Order</a>
+      <a href="ADMIN_Browse.html" class="active">Browse</a>
+      <h4>ACCOUNT</h4>
+      <a href="ADMIN_ManageUsers.html">Manage Users</a>
+    </div>
+    <div class="logout">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <a href="Login.html">Log Out</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <main>
+      <iframe src="HOME_Homepage.html"></iframe>
+    </main>
+  </div>
+
+</body>
+</html>
