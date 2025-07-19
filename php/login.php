@@ -1,23 +1,17 @@
 <?php
 session_start();
 
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "dbadm";
-
-// Connect to DB
-$conn = new mysqli($host, $user, $password, $dbname);
+// Use base credentials to query USERS table
+$conn = new mysqli("localhost", "root", "", "dbadm");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get input
 $email = $_POST['Email'];
-$enteredPassword = $_POST['Password'];
+$password = $_POST['Password'];
 
-// Query user
-$stmt = $conn->prepare("SELECT userID, Password FROM USERS WHERE Email = ?");
+// Fetch user info
+$stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
 $stmt->bind_param("s", $email);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -25,15 +19,20 @@ $result = $stmt->get_result();
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
 
-   if ($enteredPassword === $row['Password']) {
-    $_SESSION['userID'] = $row['userID']; // Store userID in session
-    header("Location: view_products.php");// Redirect 
-    exit();
+    // Simple password check (improve later with hashing)
+    if ($password === $row['Password']) {
+        // Store session data
+        $_SESSION['userID'] = $row['userID'];
+        $_SESSION['role'] = $row['Role'];
+
+        // ✅ Now redirect to a protected page that uses db_connect.php
+        header("Location: view_products.php");
+        exit();
     } else {
-        echo "<h3>❌ Incorrect password.</h3>";
+        echo "<h3>❌ Incorrect password</h3>";
     }
 } else {
-    echo "<h3>❌ No user found with that email.</h3>";
+    echo "<h3>❌ Email not found</h3>";
 }
 
 $stmt->close();

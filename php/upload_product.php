@@ -1,10 +1,9 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['userID'])) {
-    echo "Access denied. Please <a href='../html/login.html'>login</a>.";
-    exit();
-}
+require_once 'db_connect.php'; 
+
+$userID = $_SESSION['userID'];
 
 $host = "localhost";
 $user = "root";
@@ -16,46 +15,61 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Generate new productID
-$sql = "SELECT productID FROM PRODUCT ORDER BY productID DESC LIMIT 1";
-$result = $conn->query($sql);
+// ✅ Begin transaction
+$conn->autocommit(FALSE);
 
-if ($result->num_rows > 0) {
-    $lastID = $result->fetch_assoc()['productID'];
-    $num = (int)substr($lastID, 1);
-    $num++;
-    $productID = 'P' . str_pad($num, 5, '0', STR_PAD_LEFT);
-} else {
-    $productID = 'P00001';
-}
+try {
+    // 🔹 Generate new productID
+    $sql = "SELECT productID FROM PRODUCT ORDER BY productID DESC LIMIT 1";
+    $result = $conn->query($sql);
 
-// Get form data
-$productName = $_POST['ProductName'];
-$size = $_POST['Size'];
-$category = $_POST['Category'];
-$description = $_POST['Description'];
-$quantity = $_POST['QuantityAvail'];
-$price = $_POST['Price'];
+    if ($result->num_rows > 0) {
+        $lastID = $result->fetch_assoc()['productID'];
+        $num = (int)substr($lastID, 1) + 1;
+        $productID = 'P' . str_pad($num, 5, '0', STR_PAD_LEFT);
+    } else {
+        $productID = 'P00001';
+    }
 
-// Handle image
-$image = $_FILES['Image']['tmp_name'];
-$imageData = file_get_contents($image);
+    // 🔹 Get form data
+    $productName = $_POST['ProductName'];
+    $size = $_POST['Size'];
+    $category = $_POST['Category'];
+    $description = $_POST['Description'];
+    $quantity = $_POST['QuantityAvail'];
+    $price = $_POST['Price'];
 
-// Insert into DB
-$stmt = $conn->prepare("INSERT INTO PRODUCT 
-    (productID, ProductName, Size, Category, Description, QuantityAvail, Price, Image) 
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+    // 🔹 Handle image
+    $image = $_FILES['Image']['tmp_name'];
+    $imageData = file_get_contents($image);
 
-$stmt->bind_param("sssssids", 
-    $productID, $productName, $size, $category, $description, $quantity, $price, $imageData);
+    // 🔹 Prepare and execute insert
+    $stmt = $conn->prepare("INSERT INTO PRODUCT 
+        (productID, ProductName, Size, Category, Description, QuantityAvail, Price, Image) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
     
-if ($stmt->execute()) {
-   header("Location: view_products.php");
-exit();
-} else {
-    echo "<h3>❌ Error: " . $stmt->error . "</h3>";
-}
+    if (!$stmt) {
+        throw new Exception("Statement preparation failed: " . $conn->error);
+    }
 
-$stmt->close();
-$conn->close();
+    $stmt->bind_param("sssssids", 
+        $productID, $productName, $size, $category, $description, $quantity, $price, $imageData);
+
+    if (!$stmt->execute()) {
+        throw new Exception("Execution failed: " . $stmt->error);
+    }
+
+    // ✅ Commit if all successful
+    $conn->commit();
+    header("Location: view_products.php");
+    exit();
+
+} catch (Exception $e) {
+    // ❌ Rollback on any failure
+    $conn->rollback();
+    echo "<h3>❌ Error: " . $e->getMessage() . "</h3>";
+} finally {
+    if (isset($stmt)) $stmt->close();
+    $conn->close();
+}
 ?>

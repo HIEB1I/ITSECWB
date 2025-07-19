@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>View Products</title>
+</head>
+<body>
+  <?php
+  session_start();
+  if (!isset($_SESSION['userID'])) {
+    header("Location: login.html");
+    exit();
+  }
+  echo "<h2>Welcome, User ID: " . $_SESSION['userID'] . "</h2>";
+  ?>
+
+  <form action="product_upload.html" method="get" style="display:inline;">
+    <button type="submit">➕ Upload Product</button>
+  </form>
+
+  <form action="view_cart.php" method="get" style="display:inline;">
+    <button type="submit">🛒 View Cart</button>
+  </form>
+
+  <hr>
+  <h3>All Products:</h3>
+
+  <!-- Product listing rendered by PHP -->
+<?php include '../php/view_products.php'; ?>
+
+</body>
+</html>
