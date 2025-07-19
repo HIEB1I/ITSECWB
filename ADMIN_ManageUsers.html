@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Manage Users ‒ KALYE WEST</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: Arial, sans-serif;
+      background: #fff;
+      color: #000;
+    }
+
+    body {
+      display: flex;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 220px;
+      background: #111;
+      color: white;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .sidebar h4 {
+      margin: 30px 0 10px;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .sidebar a {
+      color: white;
+      text-decoration: none;
+      margin: 8px 0;
+      display: block;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .sidebar a.active {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .sidebar a:hover {
+      opacity: 0.7;
+    }
+
+    .sidebar .logout {
+      margin-top: 40px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Main content */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid #ccc;
+    }
+
+    .logo img {
+      width: 150px;
+    }
+
+    main {
+      padding: 40px;
+      flex: 1;
+    }
+
+    h2 {
+      margin-bottom: 40px;
+      font-size: 40px;
+      font-weight: normal;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f3f3f3;
+    }
+
+    .actions i {
+      margin-right: 10px;
+      cursor: pointer;
+    }
+
+    .actions a i.fa-pen-to-square {
+      color: black;
+    }
+
+    .actions i.fa-trash {
+      color: red;
+    }
+
+    .add-btn {
+      padding: 10px 20px;
+      border: 1px solid #000;
+      background: transparent;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.2s;
+    }
+
+    .add-btn:hover {
+      background: #000;
+      color: #fff;
+    }
+
+    footer {
+      padding: 20px 40px;
+      border-top: 1px solid #ccc;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .social i {
+      margin: 0 10px;
+      font-size: 18px;
+      color: black;
+    }
+
+    /* Delete Modal */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 30px;
+      text-align: center;
+      border-radius: 10px;
+      width: 300px;
+    }
+
+    .modal-content button {
+      padding: 8px 16px;
+      margin: 10px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      background: #ccc;
+    }
+
+    .btn-delete {
+      background: red;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="sidebar">
+    <div>
+      <h4>DASHBOARD</h4>
+      <a href="ADMIN_Dashboard.html">Product</a>
+      <a href="ADMIN_Orders.html">Order</a>
+      <a href="ADMIN_Browse.html">Browse</a>
+      <h4>ACCOUNT</h4>
+      <a href="ADMIN_ManageUsers.html" class="active">Manage Users</a>
+    </div>
+    <div class="logout">
+      <i class="fa-solid fa-right-from-bracket"></i>
+      <a href="Login.html">Log Out</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <header>
+      <div class="logo">
+        <img src="Logos/KW Logo.png" alt="KALYE WEST">
+      </div>
+    </header>
+
+    <main>
+      <h2>MANAGE USERS</h2>
+
+      <table>
+        <thead>
+          <tr>
+            <th>USER ID</th>
+            <th>FULL NAME</th>
+            <th>EMAIL</th>
+            <th>PASSWORD</th>
+            <th>ROLE</th>
+            <th>JOINED DATE</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="product-list"></tbody>
+      </table>
+
+      <a href="ADMIN_AddUser.html"><button class="add-btn">+ ADD USER</button></a>
+    </main>
+
+    <footer>
+      <div class="social">
+        <a href="#"><i class="fa-brands fa-facebook"></i></a>
+        <a href="#"><i class="fa-brands fa-instagram"></i></a>
+        <a href="#"><i class="fa-brands fa-tiktok"></i></a>
+      </div>
+      <div>2025, KALYE WEST</div>
+    </footer>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div class="modal" id="deleteModal">
+    <div class="modal-content">
+      <p>Are you sure you want to delete this product?</p>
+      <button class="btn-cancel" onclick="hideModal()">Cancel</button>
+      <button class="btn-delete" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+
+  <script>
+  let userIdToDelete = null;
+
+  function showModal() {
+    document.getElementById('deleteModal').style.display = 'flex';
+  }
+
+  function hideModal() {
+    document.getElementById('deleteModal').style.display = 'none';
+  }
+
+  function confirmDelete() {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const updatedUsers = users.filter(user => user.id !== userIdToDelete);
+    localStorage.setItem("users", JSON.stringify(updatedUsers));
+    userIdToDelete = null;
+    hideModal();
+    loadUsers();
+  }
+
+  function deleteUser(id) {
+    userIdToDelete = id;  // Store the user ID
+    showModal();          // Show the modal instead of deleting immediately
+  }
+
+  function loadUsers() {
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const tbody = document.getElementById("product-list");
+    tbody.innerHTML = ""; // Clear existing rows
+
+    users.forEach(user => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+        <td>${user.id}</td>
+        <td>${user.fullName}</td>
+        <td>${user.email}</td>
+        <td>${user.password}</td>
+        <td>${user.role}</td>
+        <td>${user.joined}</td>
+        <td class="actions">
+        <i class="fa-solid fa-pen-to-square" onclick="editUser('U07316')"></i>
+        <i class="fa-solid fa-trash" onclick="deleteUser('${user.id}')"></i>
+        </td>
+    `;
+    tbody.appendChild(row);
+    });
+
+  }
+
+  function editUser(userId) {
+    window.location.href = `ADMIN_EditUser.html?id=${userId}`;
+  }
+
+  window.addEventListener("DOMContentLoaded", loadUsers);
+</script>
+
+</body>
+</html>
