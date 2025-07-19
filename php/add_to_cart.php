@@ -19,8 +19,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Step 1: Check if user already has a cart
-$sql = "SELECT cartID FROM CART WHERE ref_userID = ?";
+// Check if user already has a cart
+$sql = "SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $ref_userID);
 $stmt->execute();
@@ -42,7 +42,7 @@ if ($result->num_rows > 0) {
     $insertCart->execute();
 }
 
-// Step 2: Add item to CART_ITEMS
+//Add item to CART_ITEMS
 $sql = "SELECT cartItemsID FROM CART_ITEMS ORDER BY cartItemsID DESC LIMIT 1";
 $res = $conn->query($sql);
 $lastCI = $res->num_rows > 0 ? $res->fetch_assoc()['cartItemsID'] : 'CI00000';

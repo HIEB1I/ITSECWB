@@ -27,7 +27,7 @@ if ($result->num_rows === 1) {
 
    if ($enteredPassword === $row['Password']) {
     $_SESSION['userID'] = $row['userID']; // Store userID in session
-    header("Location: ../html/user_contact.html"); // Redirect to contact page
+    header("Location: view_products.php");// Redirect 
     exit();
     } else {
         echo "<h3>❌ Incorrect password.</h3>";
