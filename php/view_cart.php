@@ -4,7 +4,7 @@ if (!isset($_SESSION['userID'])) {
     exit("Access denied.");
 }
 
-require_once 'db_connect.php'; 
+require_once 'db_connect.php';
 
 $userID = $_SESSION['userID'];
 
@@ -34,6 +34,7 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 $total = 0;
+
 echo "<h2>Your Cart</h2>";
 echo "<table border='1' cellpadding='5'>
 <tr><th>Product</th><th>Price</th><th>Quantity</th><th>Subtotal</th><th>Action</th></tr>";
@@ -60,19 +61,50 @@ while ($row = $result->fetch_assoc()) {
     </tr>";
 }
 echo "</table>";
-
 echo "<h3>Total: ₱" . number_format($total, 2) . "</h3>";
 
-// ✅ Update total in CART table (prepared statement to avoid SQL injection)
+// ✅ Update total in CART table
 $update = $conn->prepare("UPDATE CART SET Total = ? WHERE cartID = ?");
 $update->bind_param("ds", $total, $cartID);
 $update->execute();
 $update->close();
 
-// ✅ Checkout form
-echo "<form action='checkout.php' method='post'>
-        <input type='submit' value='✅ Checkout Now'>
-      </form>";
+// ✅ Get existing Currency & MOP to preselect
+$getCart = $conn->prepare("SELECT Currency, MOP FROM CART WHERE cartID = ?");
+$getCart->bind_param("s", $cartID);
+$getCart->execute();
+$cartInfo = $getCart->get_result()->fetch_assoc();
+$getCart->close();
+
+$selectedCurrency = $cartInfo['Currency'] ?? '';
+$selectedMOP = $cartInfo['MOP'] ?? '';
+
+// ✅ Checkout form (with currency + MOP)
+echo "
+<form action='checkout.php' method='post'>
+    <label for='currency'><strong>Currency:</strong></label>
+    <select name='currency' id='currency' required>
+        <option value=''>-- Select --</option>
+        <option value='PHP' " . ($selectedCurrency === 'PHP' ? 'selected' : '') . ">PHP</option>
+        <option value='USD' " . ($selectedCurrency === 'USD' ? 'selected' : '') . ">USD</option>
+        <option value='WON' " . ($selectedCurrency === 'WON' ? 'selected' : '') . ">WON</option>
+    </select>
+    <br><br>
+
+    <label for='payment_method'><strong>Mode of Payment:</strong></label>
+    <select name='payment_method' id='payment_method' required>
+        <option value=''>-- Select --</option>
+        <option value='COD' " . ($selectedMOP === 'COD' ? 'selected' : '') . ">COD</option>
+        <option value='GCash' " . ($selectedMOP === 'GCash' ? 'selected' : '') . ">GCASH</option>
+        <option value='Card' " . ($selectedMOP === 'Card' ? 'selected' : '') . ">CARD</option>
+    </select>
+    <br><br>
+
+    <input type='hidden' name='cartID' value='$cartID'>
+    <input type='submit' value='✅ Checkout Now'>
+</form>
+";
+
 
 echo "<br><a href='view_products.php'>⬅ Continue Shopping</a>";
 

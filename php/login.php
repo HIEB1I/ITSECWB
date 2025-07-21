@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-// Connect using base/root user (for login only)
+// Connect to database
 $conn = new mysqli("localhost", "root", "", "dbadm");
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
@@ -19,13 +19,17 @@ $result = $stmt->get_result();
 if ($result->num_rows === 1) {
     $row = $result->fetch_assoc();
 
-    // Password verification (replace with hash if applied)
+    // ⚠️ Replace this with password_hash verification in production
     if ($password === $row['Password']) {
         $_SESSION['userID'] = $row['userID'];
         $_SESSION['role'] = $row['Role'];
 
-        // Redirect to product view
-        header("Location: view_products.php");
+        // ✅ Role-based redirection
+        if ($row['Role'] === 'Admin') {
+            header("Location: ADMIN_Dashboard.php");
+        } else {
+            header("Location: view_products.php");
+        }
         exit();
     } else {
         echo "<h3>❌ Incorrect password</h3>";

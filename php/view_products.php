@@ -34,6 +34,13 @@ $userID = $_SESSION['userID'];
   <button type="submit">🛒 View Cart</button>
 </form>
 
+<?php if ($_SESSION['role'] === 'Admin' || $_SESSION['role'] === 'Staff'): ?>
+    <form action="ADMIN_Dashboard.php" method="get">
+        <button type="submit">Go to Admin Dashboard</button>
+    </form>
+<?php endif; ?>
+
+
 <hr>
 <h3>All Products:</h3>
 

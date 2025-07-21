@@ -75,11 +75,6 @@ CREATE TABLE IF NOT EXISTS CART_ITEMS (
 );
 
 
-Cart Purcahsed Log
-Logs all the items user purchased
-
-
-
 -- CART AUDIT TABLE
 CREATE TABLE IF NOT EXISTS CART_AUDIT (
   cartauditID INT PRIMARY KEY AUTO_INCREMENT,
@@ -145,11 +140,6 @@ DELIMITER ;
 
 
 
-PRODUCT NAME CHECKER
-Checks all the product names and prevents inserting same names
-
-
-
 DELIMITER $$
 
 CREATE TRIGGER product_name_checker
@@ -169,9 +159,6 @@ END $$
 DELIMITER ;
 
 
-EMail CHecker
-Email must be Gmail
-
 
 DELIMITER $$
 CREATE TRIGGER  invalid_email
@@ -187,11 +174,6 @@ BEGIN
 
 $$ DELIMITER ;
 
-
-
-
-Product Delete Audit
-Logs all deleted products
 
 
 -- PRODUCT_DELETE_AUDIT table
@@ -221,9 +203,6 @@ END
 $$ DELIMITER ;
 
 
-
-Product Edit Audit
-Logs all edited products
 
 
 -- Edit Products History
