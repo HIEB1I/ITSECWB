@@ -59,8 +59,8 @@ try {
     echo "<a href='view_products.php'>⬅ Back to Products</a> | <a href='view_cart.php'>🛒 View Cart</a>";
 
 } catch (Exception $e) {
-    $conn->rollback(); // ❌ Rollback on failure
-    echo "<h3>❌ Error: " . $e->getMessage() . "</h3>";
+    $conn->rollback(); // Rollback on failure
+    echo "<h3>Error: " . $e->getMessage() . "</h3>";
 }
 
 $conn->close();

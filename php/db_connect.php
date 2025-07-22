@@ -3,7 +3,7 @@ $host = "localhost";
 $dbname = "dbadm";
 
 // Default fallback credentials
-$db_user = "customer_user";
+$db_user = " ";
 
 // Assign based on session role
 if (isset($_SESSION['role'])) {
