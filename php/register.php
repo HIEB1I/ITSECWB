@@ -1,5 +1,4 @@
 <?php
-// Start the session to store any session data
 session_start();
 
 // Define database credentials
@@ -44,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("ssssss", $userID, $firstName, $lastName, $password, $email, $role);
 
     if ($stmt->execute()) {
-        // Redirect to login page after successful registration
-        header("Location: ../html/login.html");
+        // Redirect to login.php after successful registration
+        header("Location: login.php");
         exit();
     } else {
         // Show an error message if registration fails
@@ -142,11 +141,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
 
-    <a href="Login.html" style="position: absolute; top: 20px; left: 50px; text-decoration: none; font-size: 30px;">←</a>
+    <a href="login.php" style="position: absolute; top: 20px; left: 50px; text-decoration: none; font-size: 30px;">←</a>
 
   <!-- KW Logo -->
   <div class="logo">
-    <img src="Logos/KW Logo.png" alt="Kanye West Logo">
+    <img src="../Logos/KW Logo.png" alt="KALYE WEST">
   </div>
 
   <hr>
@@ -165,11 +164,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   <!-- Footer Logos -->
   <div class="footer-logos">
-    <img src="../Logos/Femme Fetalle" alt="FEMME">
-    <img src="Logos/Little Logo.png" alt="little human">
-    <img src="Logos/MNLA Logo.png" alt="MN+LA">
-    <img src="Logos/Sage Logo.png" alt="SageHill.">
-    <img src="Logos/Daily Logo.png" alt="Daily Flight">
+    <img src="../Logos/Femme Logo.png" alt="FEMME">
+    <img src="../Logos/Little Logo.png" alt="little human">
+    <img src="../Logos/MNLA Logo.png" alt="MN+LA">
+    <img src="../Logos/Sage Logo.png" alt="SageHill.">
+    <img src="../Logos/Daily Logo.png" alt="Daily Flight">
   </div>
 </body>
 </html>
