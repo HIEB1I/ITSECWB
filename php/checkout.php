@@ -47,14 +47,28 @@ try {
     $checkStmt->close();
 
     // 🔹 Step 3: Mark cart as purchased
-    $updateCart = $conn->prepare("UPDATE CART SET Purchased = TRUE WHERE cartID = ?");
-    $updateCart->bind_param("s", $cartID);
+    $currency = $_POST['currency'] ?? '';
+    $mop = $_POST['payment_method'] ?? '';
+
+    if (!in_array($currency, ['PHP', 'USD', 'WON']) || !in_array($mop, ['COD', 'GCash', 'Card'])) {
+        throw new Exception("Invalid Currency or Mode of Payment.");
+    }
+
+    // 🔹 Step 4: Update cart with payment info and mark as purchased
+    $updateCart = $conn->prepare("
+    UPDATE CART 
+    SET Currency = ?, MOP = ?, Purchased = TRUE, Status = 'To Ship' 
+    WHERE cartID = ?
+");
+
+    $updateCart->bind_param("sss", $currency, $mop, $cartID);
     if (!$updateCart->execute()) {
-        throw new Exception("Failed to mark cart as purchased.");
+        throw new Exception("Failed to update cart details.");
     }
     $updateCart->close();
 
-    // 🔹 Step 4: Deduct stock
+
+    // 🔹 Step 5: Deduct stock
     $deductStockSQL = "
         UPDATE PRODUCT P
         JOIN CART_ITEMS CI ON P.productID = CI.ref_productID

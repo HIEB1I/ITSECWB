@@ -15,16 +15,12 @@ public class DATABASE_Manager {
 }
 
 /*
-  
-
-DROP SCHEMA IF EXISTS dbadm;
--- SCHEMA
+  DROP SCHEMA IF EXISTS dbadm;
 CREATE DATABASE IF NOT EXISTS dbadm;
 USE dbadm;
 
--- USERS table
 CREATE TABLE IF NOT EXISTS USERS (
-  userID VARCHAR(10) NOT NULL PRIMARY KEY, -- U00001
+  userID VARCHAR(10) NOT NULL PRIMARY KEY, 
   FirstName VARCHAR(200),
   LastName VARCHAR(200),
   Password VARCHAR(200),
@@ -34,9 +30,9 @@ CREATE TABLE IF NOT EXISTS USERS (
   Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- PRODUCT table
+
 CREATE TABLE IF NOT EXISTS PRODUCT (
-  productID VARCHAR(10) NOT NULL PRIMARY KEY, -- P00001
+  productID VARCHAR(10) NOT NULL PRIMARY KEY,
   ProductName VARCHAR(200),
   Size ENUM('Extra-Small', 'Small', 'Medium', 'Large', 'Extra-Large'),
   Category ENUM ('TEES', 'BOTTOMS', 'LAYERING'),
@@ -46,11 +42,16 @@ CREATE TABLE IF NOT EXISTS PRODUCT (
   Image MEDIUMBLOB
 );
 
--- CART table
+
 CREATE TABLE IF NOT EXISTS CART (
-  cartID VARCHAR(10) NOT NULL PRIMARY KEY, -- C00001
+  cartID VARCHAR(10) NOT NULL PRIMARY KEY,
   Total DOUBLE,
   Purchased BOOLEAN,
+  Status ENUM('On-Going','To Ship', 'Delivered') DEFAULT 'On-Going',
+  Currency ENUM('PHP', 'USD', 'WON'),
+  MOP ENUM('COD', 'GCASH', 'CARD'),  
+  Order_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,         
+  Ship_By_Date TIMESTAMP NULL,
   ref_userID VARCHAR(10) NOT NULL,
   CONSTRAINT fk_cartuser
     FOREIGN KEY (ref_userID)
@@ -58,9 +59,8 @@ CREATE TABLE IF NOT EXISTS CART (
     ON DELETE CASCADE
 );
 
--- CART_ITEMS table
 CREATE TABLE IF NOT EXISTS CART_ITEMS (
-  cartItemsID VARCHAR(10) NOT NULL PRIMARY KEY, -- CI00001
+  cartItemsID VARCHAR(10) NOT NULL PRIMARY KEY, 
   QuantityOrdered VARCHAR(10),
   ref_productID VARCHAR(10) NOT NULL,
   ref_cartID VARCHAR(10) NOT NULL,
@@ -74,127 +74,93 @@ CREATE TABLE IF NOT EXISTS CART_ITEMS (
     ON DELETE CASCADE
 );
 
-
-Cart Purcahsed Log
-Logs all the items user purchased
-
-
-
--- CART AUDIT TABLE
 CREATE TABLE IF NOT EXISTS CART_AUDIT (
   cartauditID INT PRIMARY KEY AUTO_INCREMENT,
   userID VARCHAR(10),
   cartID VARCHAR(10),
   Total DOUBLE,
+  Currency ENUM('PHP', 'USD', 'WON'),
+  MOP ENUM('COD', 'GCASH', 'CARD'),
+  Status ENUM('On-Going','To Ship', 'Delivered'),
+  Order_Date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  Ship_By_Date TIMESTAMP NULL,
   Purchased BOOLEAN
 );
 
--- CART ITEMS AUDIT TABLE
 CREATE TABLE IF NOT EXISTS CART_ITEMS_AUDIT (
   cartItemsAuditID INT PRIMARY KEY AUTO_INCREMENT,
   ref_cartauditID INT NOT NULL,
   QuantityOrdered INT,
-  productID VARCHAR(10),
   Name VARCHAR(200),
   Size ENUM('Extra-Small', 'Small', 'Medium', 'Large', 'Extra-Large'),
-  Category ENUM('TEES', 'BOTTOMS', 'LAYERING'),
   Description VARCHAR(500),
   Price DOUBLE,
-  Image MEDIUMBLOB,
   FOREIGN KEY (ref_cartauditID) REFERENCES CART_AUDIT(cartauditID) ON DELETE CASCADE
 );
 
--- TRIGGER FOR AUDIT LOGGING
 DELIMITER $$
 
 CREATE TRIGGER cart_checkout_audit
 AFTER UPDATE ON CART
 FOR EACH ROW
 BEGIN
-  -- Declare variables FIRST
   DECLARE last_audit_id INT;
 
-  -- Only trigger when cart is marked as purchased
-  IF NEW.Purchased = TRUE AND OLD.Purchased = FALSE THEN
+  IF NEW.Status = 'Delivered' AND NEW.Purchased IS TRUE THEN
+    INSERT INTO CART_AUDIT (
+      userID, cartID, Total, Currency, MOP, Status, Ship_By_Date, Purchased
+    )
+    VALUES (
+      NEW.ref_userID, NEW.cartID, NEW.Total, NEW.Currency, NEW.MOP,
+      NEW.Status, NEW.Ship_By_Date, NEW.Purchased
+    );
 
-    -- Insert into CART_AUDIT
-    INSERT INTO CART_AUDIT (userID, cartID, Total, Purchased)
-    VALUES (NEW.ref_userID, NEW.cartID, NEW.Total, NEW.Purchased);
-
-    -- Get the last inserted audit ID
     SET last_audit_id = LAST_INSERT_ID();
-
-    -- Insert related items into CART_ITEMS_AUDIT
+    
     INSERT INTO CART_ITEMS_AUDIT (
-      ref_cartauditID, QuantityOrdered, productID, Name, Size,
-      Category, Description, Price, Image
+      ref_cartauditID, QuantityOrdered, Name, Size, Description, Price
     )
     SELECT
-      last_audit_id, CI.QuantityOrdered, CI.ref_productID, P.ProductName, P.Size,
-      P.Category, P.Description, P.Price, P.Image
+      last_audit_id, CI.QuantityOrdered, P.ProductName, P.Size,
+      P.Description, P.Price
     FROM
       CART_ITEMS CI
       JOIN PRODUCT P ON CI.ref_productID = P.productID
     WHERE
       CI.ref_cartID = NEW.cartID;
-
   END IF;
 END $$
 
 DELIMITER ;
 
-
-
-PRODUCT NAME CHECKER
-Checks all the product names and prevents inserting same names
-
-
-
 DELIMITER $$
 
-CREATE TRIGGER product_name_checker
-BEFORE INSERT ON PRODUCT
+CREATE TRIGGER product_quantity_checker
+BEFORE UPDATE ON PRODUCT
 FOR EACH ROW
 BEGIN
-  IF EXISTS (
-    SELECT 1 FROM PRODUCT
-    WHERE ProductName = NEW.ProductName
-      AND productID != NEW.productID
-  ) THEN
+  IF NEW.QuantityAvail < 0 THEN
     SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'Product name already exists.';
+    SET MESSAGE_TEXT = 'Invalid Value';
   END IF;
 END $$
 
 DELIMITER ;
 
-
-EMail CHecker
-Email must be Gmail
-
-
 DELIMITER $$
-CREATE TRIGGER  invalid_email
+CREATE TRIGGER invalid_email
 BEFORE INSERT ON USERS
 FOR EACH ROW
-
 BEGIN
-	IF NEW.Email NOT LIKE'%@gmail.com' THEN
-		SIGNAL SQLSTATE '45000'
-		SET MESSAGE_TEXT = 'Invalid input. Email must be GMail';
-    END IF;
-	END
-
-$$ DELIMITER ;
-
-
+  IF NEW.Email NOT LIKE '%@gmail.com'
+     OR EXISTS (SELECT 1 FROM USERS WHERE Email = NEW.Email) THEN
+    SIGNAL SQLSTATE '45000'
+    SET MESSAGE_TEXT = 'Invalid input. Email must be a unique GMail address';
+  END IF;
+END$$
+DELIMITER ;
 
 
-Product Delete Audit
-Logs all deleted products
-
-
--- PRODUCT_DELETE_AUDIT table
 CREATE TABLE IF NOT EXISTS PRODUCT_DELETE_AUDIT (
   archiveID INT PRIMARY KEY AUTO_INCREMENT,
   productID VARCHAR(10), 
@@ -208,8 +174,6 @@ CREATE TABLE IF NOT EXISTS PRODUCT_DELETE_AUDIT (
   Time_Deleted TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- Deleted Products History Process
 DELIMITER $$
 CREATE TRIGGER  delete_product
 AFTER DELETE ON PRODUCT
@@ -220,13 +184,6 @@ BEGIN
 END
 $$ DELIMITER ;
 
-
-
-Product Edit Audit
-Logs all edited products
-
-
--- Edit Products History
 CREATE TABLE IF NOT EXISTS PRODUCT_EDIT_AUDIT (
   archiveID INT PRIMARY KEY AUTO_INCREMENT,
   productID VARCHAR(10),
@@ -245,14 +202,12 @@ CREATE TABLE IF NOT EXISTS PRODUCT_EDIT_AUDIT (
   Time_Change TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Edit Products History
 DELIMITER $$
 
 CREATE TRIGGER price_product
 AFTER UPDATE ON PRODUCT
 FOR EACH ROW
 BEGIN
-  -- Log only if the price, size, quantity, category, or description has changed
   IF OLD.ProductName != NEW.ProductName OR
 	 OLD.Price != NEW.Price OR
      OLD.QuantityAvail != NEW.QuantityAvail OR
@@ -284,6 +239,26 @@ END $$
 
 DELIMITER ;
 
+CREATE USER 'admin_user'@'localhost';
+GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
+
+CREATE USER 'staff_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.PRODUCT TO 'staff_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'staff_user'@'localhost';
+
+CREATE USER 'customer_user'@'localhost';
+GRANT SELECT ON dbadm.PRODUCT TO 'customer_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'customer_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'localhost';
+GRANT UPDATE (QuantityAvail) ON dbadm.PRODUCT TO 'customer_user'@'localhost';
+
+FLUSH PRIVILEGES;
+
+DROP USER IF EXISTS 'admin_user'@'localhost';
+
+CREATE USER 'admin_user'@'localhost';
+GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
+FLUSH PRIVILEGES;
 
 
 
