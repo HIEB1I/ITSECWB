@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-    exit("Access denied.");
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
 require_once 'db_connect.php';
 
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
     $email = $_POST['email'];
-    $password = $_POST['password'];
+    $password = password_hash($_POST['Password'], PASSWORD_DEFAULT); 
     $role = $_POST['role'];
     $address = $_POST['address'];
     $createdAt = $_POST['joined'];
@@ -34,11 +34,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("ssssssss", $userID, $firstName, $lastName, $password, $email, $address, $role, $createdAt);
 
     if ($stmt->execute()) {
-        $success = "✅ User added successfully.";
+        $success = " User added successfully.";
         header("Location: ADMIN_ManageUsers.php");
         exit();
     } else {
-        $error = "❌ Failed to add user: " . $stmt->error;
+        $error = " Failed to add user: " . $stmt->error;
     }
 
     $stmt->close();
@@ -153,6 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     form input[type="text"],
+    form input[type="password"],
     form input[type="number"],
     form textarea,
     form select {
@@ -260,13 +261,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h4>DASHBOARD</h4>
     <a href="ADMIN_Dashboard.php">Product</a>
     <a href="ADMIN_Orders.php">Order</a>
-    <a href="ADMIN_Browse.php">Browse</a>
+   <a href="view_products.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php" class="active">Manage Users</a>
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="Login.html">Log Out</a>
+    <a href="../html/login.html">Log Out</a>
   </div>
 </div>
 
@@ -307,7 +308,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="text" id="email" name="email" required>
 
       <label for="password">Password:</label>
-      <input type="text" id="password" name="password" required>
+      <input type="password" id="password" name="password" required>
+
 
       <label for="address">Address:</label>
       <input type="text" id="address" name="address" required>
@@ -317,7 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="">Select Role</option>
         <option value="Admin">Admin</option>
         <option value="Staff">Staff</option>
-        <option value="Customer">User</option>
+        <option value="Customer">Customer</option>
       </select>
 
       <label for="joined">Joined Date:</label>

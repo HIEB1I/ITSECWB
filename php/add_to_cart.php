@@ -13,7 +13,7 @@ $quantity = (int)$_POST['Quantity']; // Force quantity to be integer
 $conn->autocommit(FALSE); // Begin transaction
 
 try {
-    // 🔹 Step 1: Get or create active cart
+    // Get or create active cart
     $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
     $stmt->bind_param("s", $userID);
     $stmt->execute();
@@ -38,13 +38,13 @@ try {
     }
     $stmt->close();
 
-    // 🔹 Step 2: Generate new cartItemsID
+    // Generate new cartItemsID
     $res = $conn->query("SELECT cartItemsID FROM CART_ITEMS ORDER BY cartItemsID DESC LIMIT 1");
     $lastCI = $res->num_rows > 0 ? $res->fetch_assoc()['cartItemsID'] : 'CI00000';
     $nextCI = (int)substr($lastCI, 2) + 1;
     $cartItemsID = 'CI' . str_pad($nextCI, 5, '0', STR_PAD_LEFT);
 
-    // 🔹 Step 3: Insert cart item
+    // Insert cart item
     $addItem = $conn->prepare("INSERT INTO CART_ITEMS (cartItemsID, QuantityOrdered, ref_productID, ref_cartID) VALUES (?, ?, ?, ?)");
     $addItem->bind_param("siss", $cartItemsID, $quantity, $productID, $cartID);
     if (!$addItem->execute()) {
@@ -52,7 +52,7 @@ try {
     }
     $addItem->close();
 
-    // ✅ Step 4: Commit transaction
+    //  Commit transaction
     $conn->commit();
 
     echo "<h3>✅ Item added to cart!</h3>";

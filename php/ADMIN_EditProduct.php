@@ -1,7 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || ($_SESSION['role'] !== 'Admin' && $_SESSION['role'] !== 'Staff')) {
-    exit("Access denied.");
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
 
 require_once 'db_connect.php';
@@ -93,14 +93,14 @@ $imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($pr
   <div>
     <h4>DASHBOARD</h4>
     <a href="ADMIN_Dashboard.php" class="active">Product</a>
-    <a href="ADMIN_Orders.html">Order</a>
-    <a href="ADMIN_Browse.html">Browse</a>
+    <a href="ADMIN_Orders.php">Order</a>
+   <a href="view_products.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php">Manage Users</a>
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="logout.php">Log Out</a>
+    <a href="../html/logout.html">Log Out</a>
   </div>
 </div>
 
@@ -137,7 +137,7 @@ $imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($pr
           <label for="size">SIZE:</label>
           <select name="size" required>
             <?php
-            $sizes = ["SMALL", "MEDIUM", "LARGE", "EXTRA LARGE", "2X LARGE", "3X LARGE", "4X LARGE"];
+            $sizes = ['Extra-Small', 'Small', 'Medium', 'Large', 'Extra-Large'];
             foreach ($sizes as $s) {
               $selected = $product['Size'] === $s ? 'selected' : '';
               echo "<option value=\"$s\" $selected>$s</option>";

@@ -29,7 +29,7 @@ if ($result->num_rows > 0) {
 // Get form data
 $firstName = $_POST['FirstName'];
 $lastName = $_POST['LastName'];
-$password = $_POST['Password'];
+$password = password_hash($_POST['Password'], PASSWORD_DEFAULT);
 $email = $_POST['Email'];
 $role = $_POST['Role'];
 

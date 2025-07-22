@@ -1,8 +1,9 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
+
 require_once 'db_connect.php';
 ?>
 <!DOCTYPE html>
@@ -29,7 +30,6 @@ require_once 'db_connect.php';
       display: flex;
     }
 
-    /* Sidebar */
     .sidebar {
       width: 220px;
       background: #111;
@@ -71,7 +71,6 @@ require_once 'db_connect.php';
       gap: 8px;
     }
 
-    /* Main content */
     .main-content {
       flex: 1;
       display: flex;
@@ -127,12 +126,10 @@ require_once 'db_connect.php';
       cursor: pointer;
     }
 
-    /* Make social icons black */
     .social i {
     color: black;
     }
 
-    /* Make the edit icon black */
     .actions a i.fa-pen-to-square {
     color: black;
     }
@@ -168,7 +165,6 @@ require_once 'db_connect.php';
       font-size: 18px;
     }
 
-    /* Delete Modal */
     .modal {
       position: fixed;
       top: 0;
@@ -218,7 +214,7 @@ require_once 'db_connect.php';
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="logout.php">Log Out</a>
+    <a href="../html/login.html">Log Out</a>
   </div>
 </div>
 

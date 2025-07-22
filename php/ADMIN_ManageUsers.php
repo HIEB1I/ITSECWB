@@ -171,13 +171,13 @@ $users = $result->fetch_all(MYSQLI_ASSOC);
     <h4>DASHBOARD</h4>
     <a href="ADMIN_Dashboard.php">Product</a>
     <a href="ADMIN_Orders.php">Order</a>
-    <a href="ADMIN_Browse.php">Browse</a>
+   <a href="view_products.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php" class="active">Manage Users</a>
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="Login.html">Log Out</a>
+    <a href="../html/login.html">Log Out</a>
   </div>
 </div>
 
@@ -210,7 +210,7 @@ $users = $result->fetch_all(MYSQLI_ASSOC);
             <td><?= htmlspecialchars($user['userID']) ?></td>
             <td><?= htmlspecialchars($user['FirstName'] . ' ' . $user['LastName']) ?></td>
             <td><?= htmlspecialchars($user['Email']) ?></td>
-            <td><?= htmlspecialchars($user['Password']) ?></td>
+            <td><?= str_repeat('*', 8) ?></td> 
             <td><?= htmlspecialchars($user['Role']) ?></td>
             <td><?= htmlspecialchars($user['Address'] ?? 'N/A') ?></td>
             <td><?= htmlspecialchars($user['Created_At']) ?></td>
@@ -236,7 +236,6 @@ $users = $result->fetch_all(MYSQLI_ASSOC);
   </footer>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="modal" id="deleteModal">
   <div class="modal-content">
     <p>Are you sure you want to delete this user?</p>

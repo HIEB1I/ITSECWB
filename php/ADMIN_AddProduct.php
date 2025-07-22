@@ -1,10 +1,10 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
 
-require_once 'db_connect.php'; // Change this path if needed
+require_once 'db_connect.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = $_POST['name'];
@@ -94,13 +94,13 @@ $imageBase64 = '';
       <h4>DASHBOARD</h4>
       <a href="ADMIN_Dashboard.php" class="active">Product</a>
       <a href="ADMIN_Orders.html">Order</a>
-      <a href="ADMIN_Browse.html">Browse</a>
+      <a href="view_products.php">Browse</a>
       <h4>ACCOUNT</h4>
       <a href="ADMIN_ManageUsers.php">Manage Users</a>
     </div>
     <div class="logout">
       <i class="fa-solid fa-right-from-bracket"></i>
-      <a href="logout.php">Log Out</a>
+      <a href="../html/login.html">Log Out</a>
     </div>
   </div>
 
@@ -134,13 +134,11 @@ $imageBase64 = '';
             <label for="size">SIZE:</label>
             <select id="size" name="size" required>
               <option value="">Select Size</option>
-              <option value="SMALL">SMALL</option>
-              <option value="MEDIUM">MEDIUM</option>
-              <option value="LARGE">LARGE</option>
-              <option value="EXTRA LARGE">EXTRA LARGE</option>
-              <option value="2X LARGE">2X LARGE</option>
-              <option value="3X LARGE">3X LARGE</option>
-              <option value="4X LARGE">4X LARGE</option>
+              <option value="Extra-Small">Extra-Small</option>
+              <option value="Small">Small</option>
+              <option value="Medium">Medium</option>
+              <option value="Large">Large</option>
+              <option value="Extra-Large">Extra-Large</option>
             </select>
           </div>
           <div>

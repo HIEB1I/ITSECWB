@@ -1,8 +1,10 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-    exit("Access denied.");
+
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
+
 require_once 'db_connect.php';
 
 $userID = $_GET['userID'] ?? null;
@@ -18,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $firstName = $_POST['firstName'];
   $lastName = $_POST['lastName'];
   $email = $_POST['email'];
-  $password = $_POST['password'];
+ $password = password_hash($_POST['Password'], PASSWORD_DEFAULT); 
   $role = $_POST['role'];
   $joined = $_POST['joined'];
 
@@ -29,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Location: ADMIN_ManageUsers.php");
     exit();
   } else {
-    $error = "❌ Failed to update user.";
+    $error = "Failed to update user.";
   }
   $stmt->close();
 }
@@ -43,7 +45,7 @@ $user = $result->fetch_assoc();
 $stmt->close();
 
 if (!$user) {
-  die("❌ User not found.");
+  die("User not found.");
 }
 ?>
 
@@ -54,7 +56,6 @@ if (!$user) {
   <title>Admin Edit User ‒ KALYE WEST</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
-    /* [Same CSS from your provided HTML] */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; font-family: Arial, sans-serif; background: #fff; color: #000; }
     body { display: flex; height: 100vh; overflow: hidden; }
@@ -71,6 +72,7 @@ if (!$user) {
     h2 { margin-bottom: 30px; font-size: 32px; font-weight: normal; }
     form label { display: block; margin: 15px 0 5px; font-weight: bold; font-size: 14px; }
     form input[type="text"],
+    form input[type="password"],
     form input[type="date"],
     form input[type="email"],
     form select { width: 100%; padding: 6px; font-size: 14px; border: 1px solid #000; }
@@ -87,13 +89,13 @@ if (!$user) {
       <h4>DASHBOARD</h4>
       <a href="ADMIN_Dashboard.html">Product</a>
       <a href="ADMIN_Orders.html">Order</a>
-      <a href="ADMIN_Browse.html">Browse</a>
+      <a href="view_products.php">Browse</a>
       <h4>ACCOUNT</h4>
       <a href="ADMIN_ManageUsers.html" class="active">Manage Users</a>
     </div>
     <div class="logout">
       <i class="fa-solid fa-right-from-bracket"></i>
-      <a href="Login.html">Log Out</a>
+      <a href="../html/login.html">Log Out</a>
     </div>
   </div>
 
@@ -123,7 +125,7 @@ if (!$user) {
         <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['Email']) ?>" required>
 
         <label for="password">Password:</label>
-        <input type="text" id="password" name="password" value="<?= htmlspecialchars($user['Password']) ?>" required>
+        <input type="password" id="password" name="password" value="<?= htmlspecialchars($user['Password']) ?>" required>
 
         <label for="role">Role:</label>
         <select id="role" name="role" required>

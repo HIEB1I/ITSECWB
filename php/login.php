@@ -1,45 +1,37 @@
 <?php
 session_start();
+require_once 'db_connect.php';
 
-// Connect to database
-$conn = new mysqli("localhost", "root", "", "dbadm");
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = $_POST['Email'];
+    $password = $_POST['Password'];
 
-$email = trim($_POST['Email']);
-$password = trim($_POST['Password']);
+    $stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
+    $stmt->bind_param("s", $email);
+    $stmt->execute();
 
-// Fetch user data
-$stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
-$stmt->bind_param("s", $email);
-$stmt->execute();
-$result = $stmt->get_result();
+    $result = $stmt->get_result();
+    if ($result && $user = $result->fetch_assoc()) {
+        if (password_verify($password, $user['Password'])) {
+            $_SESSION['userID'] = $user['userID'];
+            $_SESSION['role'] = $user['Role'];
 
-if ($result->num_rows === 1) {
-    $row = $result->fetch_assoc();
-
-    // ⚠️ Replace this with password_hash verification in production
-    if ($password === $row['Password']) {
-        $_SESSION['userID'] = $row['userID'];
-        $_SESSION['role'] = $row['Role'];
-
-        // ✅ Role-based redirection
-        if ($row['Role'] === 'Admin') {
-            header("Location: ADMIN_Dashboard.php");
+            if ($user['Role'] === 'Admin') {
+                header("Location: ADMIN_Dashboard.php");
+            } elseif ($user['Role'] === 'Staff') {
+                header("Location: STAFF_Page.php");
+            } else {
+                header("Location: Customer_Home.php");
+            }
+            exit;
         } else {
-            header("Location: view_products.php");
+            echo "Incorrect password.";
         }
-        exit();
     } else {
-        echo "<h3>❌ Incorrect password</h3>";
-        echo "<a href='login.html'>Try again</a>";
+        echo "No user found with that email.";
     }
-} else {
-    echo "<h3>❌ Email not found</h3>";
-    echo "<a href='login.html'>Try again</a>";
-}
 
-$stmt->close();
-$conn->close();
+    $stmt->close();
+    $conn->close();
+}
 ?>
