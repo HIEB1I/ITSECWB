@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
-    $password = $_POST['password'];
+    $password = password_hash($_POST['Password'], PASSWORD_DEFAULT);
     $email = $_POST['email'];
     $role = 'Customer'; // Default role, can be changed if needed
 
