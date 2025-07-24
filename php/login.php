@@ -160,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       </div>
     <?php } ?>
 
-    <div><a href="../register.php">Create an account</a></div>
+    <div><a href="../php/register.php">Create an account</a></div>
     <hr style="margin: 30px 0;">
     <button class="guest-btn" onclick="location.href='GUEST_Homepage.html'">Continue as guest →</button>
   </div>
