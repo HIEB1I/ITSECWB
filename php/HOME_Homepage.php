@@ -22,17 +22,44 @@ if (!isset($_SESSION['userID'])) {
 }
 
 // Query to fetch products for all categories
-$sql = "SELECT * FROM PRODUCT";
-$result = $conn->query($sql);
+//$sql = "SELECT * FROM PRODUCT";
+//$result = $conn->query($sql);
 
-// Check if there are products
-if ($result->num_rows > 0) {
-    $products = [];
-    while ($row = $result->fetch_assoc()) {
-        $products[] = $row;
+// Fetch products by category
+$tees = [];
+$bottoms = [];
+$layering = [];
+
+function getImageTag($imageData, $alt = '', $class = 'product-img') {
+    if ($imageData) {
+        $imgData = base64_encode($imageData);
+        return "<img src='data:image/png;base64,{$imgData}' alt='" . htmlspecialchars($alt) . "' class='" . htmlspecialchars($class) . "'>";
     }
-} else {
-    $products = [];
+    return '';
+}
+
+$sql_tees = "SELECT * FROM PRODUCT WHERE Category = 'TEES'";
+$result_tees = $conn->query($sql_tees);
+if ($result_tees && $result_tees->num_rows > 0) {
+    while ($row = $result_tees->fetch_assoc()) {
+        $tees[] = $row;
+    }
+}
+
+$sql_bottoms = "SELECT * FROM PRODUCT WHERE Category = 'BOTTOMS'";
+$result_bottoms = $conn->query($sql_bottoms);
+if ($result_bottoms && $result_bottoms->num_rows > 0) {
+    while ($row = $result_bottoms->fetch_assoc()) {
+        $bottoms[] = $row;
+    }
+}
+
+$sql_layering = "SELECT * FROM PRODUCT WHERE Category = 'LAYERING'";
+$result_layering = $conn->query($sql_layering);
+if ($result_layering && $result_layering->num_rows > 0) {
+    while ($row = $result_layering->fetch_assoc()) {
+        $layering[] = $row;
+    }
 }
 
 $conn->close();
@@ -195,10 +222,10 @@ $conn->close();
   </div>
 
   <div class="grid">
-    <?php if (!empty($products)) {
-        foreach ($products as $product) { ?>
-        <a href="Products.html?id=<?= $product['productID'] ?>" class="card">
-          <img src="CategoryProducts/<?= $product['image'] ?>" alt="<?= $product['ProductName'] ?>">
+    <?php if (!empty($tees)) {
+        foreach ($tees as $product) { ?>
+        <a href="Products.php?id=<?= $product['productID'] ?>" class="card">
+          <?= getImageTag($product['Image'], $product['ProductName']) ?>
           <div class="title"><?= $product['ProductName'] ?></div>
           <div class="brand"><?= $product['Category'] ?></div>
           <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
@@ -208,7 +235,7 @@ $conn->close();
     <?php } ?>
   </div>
 
-  <div class="view-all"><a href="CATEGORY_Tees.html">View All</a></div>
+  <div class="view-all"><a href="CATEGORY_Tees.php">View All</a></div>
 </section>
 
 <!-- BOTTOMS -->
@@ -218,10 +245,20 @@ $conn->close();
   </div>
 
   <div class="grid">
-    <?php // Display Bottoms dynamically ?>
+    <?php if (!empty($bottoms)) {
+        foreach ($bottoms as $product) { ?>
+        <a href="Products.phpl?id=<?= $product['productID'] ?>" class="card">
+          <?= getImageTag($product['Image'], $product['ProductName']) ?>
+          <div class="title"><?= $product['ProductName'] ?></div>
+          <div class="brand"><?= $product['Category'] ?></div>
+          <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
+        </a>
+    <?php }} else { ?>
+        <p>No products found.</p>
+    <?php } ?>
   </div>
 
-  <div class="view-all"><a href="CATEGORY_Bottoms.html">View All</a></div>
+  <div class="view-all"><a href="CATEGORY_Bottoms.php">View All</a></div>
 </section>
 
 <!-- LAYERING -->
@@ -231,10 +268,20 @@ $conn->close();
   </div>
 
   <div class="grid">
-    <?php // Display Layering dynamically ?>
+    <?php if (!empty($layering)) {
+        foreach ($layering as $product) { ?>
+        <a href="Products.php?id=<?= $product['productID'] ?>" class="card">
+          <?= getImageTag($product['Image'], $product['ProductName']) ?>
+          <div class="title"><?= $product['ProductName'] ?></div>
+          <div class="brand"><?= $product['Category'] ?></div>
+          <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
+        </a>
+    <?php }} else { ?>
+        <p>No products found.</p>
+    <?php } ?>
   </div>
 
-  <div class="view-all"><a href="CATEGORY_Layering.html">View All</a></div>
+  <div class="view-all"><a href="CATEGORY_Layering.php">View All</a></div>
 </section>
 
 <footer>

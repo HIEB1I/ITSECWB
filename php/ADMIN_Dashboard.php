@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
 
@@ -152,7 +152,7 @@ require_once 'db_connect.php';
     </div>
     <div class="logout">
       <i class="fa-solid fa-right-from-bracket"></i>
-      <a href="logout.php">Log Out</a>
+      <a href="../php/login.php">Log Out</a>
     </div>
   </div>
 
@@ -259,5 +259,3 @@ require_once 'db_connect.php';
     }
   }
 </script>
-
-

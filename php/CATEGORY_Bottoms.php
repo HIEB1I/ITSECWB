@@ -1,4 +1,11 @@
 <?php
+function getImageTag($imageData, $alt = '', $class = 'product-img') {
+    if ($imageData) {
+        $imgData = base64_encode($imageData);
+        return "<img src='data:image/png;base64,{$imgData}' alt='" . htmlspecialchars($alt) . "' class='" . htmlspecialchars($class) . "'>";
+    }
+    return '';
+}
 session_start();
 
 // Database credentials
@@ -111,9 +118,9 @@ $conn->close();
   <?php if (!empty($products)) {
       foreach ($products as $product) { ?>
       <a href="Products.php?id=<?= $product['productID'] ?>" class="card">
-        <img src="CategoryProducts/<?= $product['Image'] ?>" alt="<?= $product['ProductName'] ?>">
+        <?= getImageTag($product['Image'], $product['ProductName']) ?>
         <div class="title"><?= $product['ProductName'] ?></div>
-        <div class="brand"><?= $product['Brand'] ?></div>
+        <div class="category"><?= $product['Category'] ?></div>
         <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
       </a>
   <?php }} else { ?>
