@@ -202,8 +202,8 @@ $conn->close();
       <option>USD</option>
       <option>KRW</option>
     </select>
-    <a href="../PROFILE_User.html"><i class="fa-regular fa-user"></i></a>
-    <a href="../CART_ViewCart.html"><i class="fa-solid fa-bag-shopping"></i></a>
+    <a href="../php/PROFILE_User.php"><i class="fa-regular fa-user"></i></a>
+    <a href="../php/CART_ViewCart.php"><i class="fa-solid fa-bag-shopping"></i></a>
   </div>
 </header>
 

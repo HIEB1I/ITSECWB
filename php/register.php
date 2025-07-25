@@ -43,15 +43,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->bind_param("ssssss", $userID, $firstName, $lastName, $password, $email, $role);
 
     if ($stmt->execute()) {
-        // Redirect to login.php after successful registration
+        
         header("Location: login.php");
         exit();
     } else {
-        // Show an error message if registration fails
+        
         echo "<h3>Error: " . $stmt->error . "</h3>";
     }
 
-    // Close the prepared statement and database connection
+    
     $stmt->close();
     $conn->close();
 }

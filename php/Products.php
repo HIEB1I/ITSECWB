@@ -1,4 +1,11 @@
 <?php
+function getImageTag($imageData, $alt = '', $class = 'product-img') {
+    if ($imageData) {
+        $imgData = base64_encode($imageData);
+        return "<img src='data:image/png;base64,{$imgData}' alt='" . htmlspecialchars($alt) . "' class='" . htmlspecialchars($class) . "'>";
+    }
+    return '';
+}
 session_start();
 require_once 'db_connect.php';
 
@@ -63,7 +70,7 @@ if (!$product) {
 <body>
    <header>
     <div class="logo">
-      <a href="../HOME_Homepage.php"><img src="../Logos/KW Logo.png" alt="KALYE WEST"></a>
+      <a href="../php/HOME_Homepage.php"><img src="../Logos/KW Logo.png" alt="KALYE WEST"></a>
     </div>
     <div class="utils">
       <select>
@@ -71,8 +78,8 @@ if (!$product) {
         <option>USD</option>
         <option>KRW</option>
       </select>
-      <a href="../PROFILE_User.html"><i class="fa-regular fa-user"></i></a>
-      <a href="../CART_ViewCart.html"><i class="fa-solid fa-bag-shopping"></i></a>
+      <a href="../php/PROFILE_User.php"><i class="fa-regular fa-user"></i></a>
+      <a href="../php/CART_ViewCart.php"><i class="fa-solid fa-bag-shopping"></i></a>
     </div>
   </header>
 
@@ -83,7 +90,7 @@ if (!$product) {
   </nav>
 
   <section class="product-section">
-    <img id="productImage" src="php/get_product_image.php?id=<?= htmlspecialchars($product['productID']) ?>" alt="<?= htmlspecialchars($product['ProductName']) ?>">
+    <?= getImageTag($product['Image'], $product['ProductName']) ?>
     <div class="details">
       <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
       <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
@@ -102,8 +109,13 @@ if (!$product) {
         <span id="quantityValue">1</span>
         <button onclick="changeQuantity(1)">+</button>
       </div>
-      <button class="add-to-cart" onclick="addToCart()">Add to cart</button>
-      <div id="cartConfirmation" style="display:none; color:green; margin-top:10px;">✔ Item added to cart!</div>
+      <form id="addToCartForm" action="add_to_cart.php" method="post" style="margin-top: 20px;">
+        <input type="hidden" name="productID" value="<?= htmlspecialchars($product['productID']) ?>">
+        <label for="quantity">Quantity:</label>
+        <input type="number" id="quantity" name="Quantity" value="1" min="1" required style="width: 60px;">
+        <button type="submit" class="add-to-cart">Add to cart</button>
+      </form>
+      <div id="cartPopup" style="display:none;position:fixed;top:30px;left:50%;transform:translateX(-50%);background:#0C619B;color:#fff;padding:16px 32px;border-radius:8px;z-index:9999;font-size:18px;">Product added to cart!</div>
       <div class="features">
         <ul id="featureList">
           <li><?= htmlspecialchars($product['Description']) ?></li>
@@ -134,30 +146,25 @@ if (!$product) {
       allButtons.forEach(btn => btn.classList.remove('selected'));
       button.classList.add('selected');
     }
-    function addToCart() {
-      const sizeBtn = document.querySelector('.sizes button.selected');
-      const size = sizeBtn ? sizeBtn.innerText : 'N/A';
-      const quantity = parseInt(document.getElementById('quantityValue').innerText);
-      const cartItem = {
-        id: "<?= htmlspecialchars($product['productID']) ?>",
-        title: "<?= htmlspecialchars($product['ProductName']) ?>",
-        price: "₱<?= number_format($product['Price'], 2) ?>",
-        image: "php/get_product_image.php?id=<?= htmlspecialchars($product['productID']) ?>",
-        size: size,
-        quantity: quantity
-      };
-      let cart = JSON.parse(localStorage.getItem('cart')) || [];
-      const existing = cart.find(item => item.id === cartItem.id && item.size === cartItem.size);
-      if (existing) {
-        existing.quantity += cartItem.quantity;
-      } else {
-        cart.push(cartItem);
-      }
-      localStorage.setItem('cart', JSON.stringify(cart));
-      const confirmation = document.getElementById('cartConfirmation');
-      confirmation.style.display = 'block';
-      setTimeout(() => { confirmation.style.display = 'none'; }, 1000);
-    }
+    document.getElementById('addToCartForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      var form = this;
+      var formData = new FormData(form);
+      fetch('add_to_cart.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        document.getElementById('cartPopup').style.display = 'block';
+        setTimeout(() => {
+          document.getElementById('cartPopup').style.display = 'none';
+        }, 1200);
+      })
+      .catch(() => {
+        alert('Failed to add to cart.');
+      });
+    });
   </script>
 </body>
 </html>
