@@ -28,6 +28,82 @@ if (isset($_POST['saveAddressEdit'])) {
     }
 }
 
+// Handle account details update
+if (isset($_POST['saveAccountEdit'])) {
+    $newFirstName = trim($_POST['editFirstName']);
+    $newLastName = trim($_POST['editLastName']);
+    $newEmail = trim($_POST['editEmail']);
+    $newPassword = trim($_POST['editPassword']);
+    $confirmPassword = trim($_POST['editPasswordConfirm']);
+    
+    // Validate inputs
+    $updateFields = array();
+    $types = '';
+    $params = array();
+    
+    if (!empty($newFirstName)) {
+        $updateFields[] = "FirstName = ?";
+        $types .= 's';
+        $params[] = $newFirstName;
+    }
+    
+    if (!empty($newLastName)) {
+        $updateFields[] = "LastName = ?";
+        $types .= 's';
+        $params[] = $newLastName;
+    }
+    
+    if (!empty($newEmail)) {
+        $updateFields[] = "Email = ?";
+        $types .= 's';
+        $params[] = $newEmail;
+    }
+    
+    // Handle password update
+    if (!empty($newPassword)) {
+        if ($newPassword === $confirmPassword) {
+            $updateFields[] = "Password = ?";
+            $types .= 's';
+            $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
+        } else {
+            $error_message = "❌ Passwords do not match";
+        }
+    }
+    
+    // Only proceed if there are fields to update and no errors
+    if (!empty($updateFields) && !isset($error_message)) {
+        // Add userID to parameters
+        $types .= 's';
+        $params[] = $userID;
+        
+        // Create update query
+        $sql = "UPDATE USERS SET " . implode(", ", $updateFields) . " WHERE userID = ?";
+        
+        // Prepare and execute
+        $updateStmt = $conn->prepare($sql);
+        if ($updateStmt) {
+            // Create array reference for bind_param
+            $bindParams = array($types);
+            for ($i = 0; $i < count($params); $i++) {
+                $bindParams[] = &$params[$i];
+            }
+            
+            call_user_func_array(array($updateStmt, 'bind_param'), $bindParams);
+            
+            if ($updateStmt->execute()) {
+                $success_message = "✅ Account details updated successfully";
+                // Update local variables for display
+                $firstName = !empty($newFirstName) ? $newFirstName : $firstName;
+                $lastName = !empty($newLastName) ? $newLastName : $lastName;
+                $email = !empty($newEmail) ? $newEmail : $email;
+            } else {
+                $error_message = "❌ Failed to update account details";
+            }
+            $updateStmt->close();
+        }
+    }
+}
+
 // Fetch user info
 $stmt = $conn->prepare('SELECT FirstName, LastName, Email, Address FROM USERS WHERE userID = ? LIMIT 1');
 $stmt->bind_param('s', $userID);
@@ -292,6 +368,12 @@ $orderHistory = [];
         function cancelEdit(section) {
             document.getElementById(section + 'Display').style.display = 'block';
             document.getElementById(section + 'Edit').style.display = 'none';
+            
+            // Reset form if canceling account edit
+            if (section === 'account') {
+                const form = document.getElementById('accountEdit').querySelector('form');
+                form.reset();
+            }
         }
 
         // Auto-hide messages after 3 seconds
