@@ -12,7 +12,7 @@ $stmt->bind_param("s", $userID);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($result->num_rows === 0) {
-    echo "<h3>Your cart is empty.</h3><a href='view_products.php'>⬅ Browse Products</a>";
+    echo "<h3>Your cart is empty.</h3><a href='HOME_Homepage.php'>⬅ Browse Products</a>";
     exit();
 }
 $cartID = $result->fetch_assoc()['cartID'];
@@ -159,7 +159,7 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
         ESTIMATED TOTAL: <span id="estimatedTotal">₱<?= number_format($total ?? 0, 2) ?></span>
       </div>
       <div class="checkout">
-        <form action="checkout.php" method="post">
+        <form action="CART_PlaceOrder.php" method="post">
           <label for='currency'><strong>Currency:</strong></label>
           <select name='currency' id='currency' required>
             <option value=''>-- Select --</option>
@@ -177,7 +177,7 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
           </select>
           <br><br>
           <input type='hidden' name='cartID' value='<?= htmlspecialchars($cartID) ?>'>
-          <button type="submit">Check out</button>
+          <button type="submit" name="checkout">Check out</button>
         </form>
       </div>
     </div>
