@@ -266,7 +266,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="Login.html">Log Out</a>
+    <a href="../php/login.php">Log Out</a>
   </div>
 </div>
 

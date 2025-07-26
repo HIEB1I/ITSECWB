@@ -112,9 +112,26 @@ $stmt->bind_result($firstName, $lastName, $email, $address);
 $stmt->fetch();
 $stmt->close();
 
-// Fetch order history (placeholder, implement if you have an orders table)
-$orderHistory = [];
-// Example: $orderHistory = fetchOrderHistory($userID);
+// Fetch order history for current user
+$orderSQL = "
+    SELECT 
+        C.cartID,
+        C.Total,
+        C.Currency,
+        C.MOP,
+        C.Status,
+        C.Order_Date,
+        C.ref_userID
+    FROM CART C
+    WHERE C.ref_userID = ? AND C.Purchased = 1
+    ORDER BY C.Order_Date DESC
+";
+
+$orderStmt = $conn->prepare($orderSQL);
+$orderStmt->bind_param('s', $userID);
+$orderStmt->execute();
+$orderHistory = $orderStmt->get_result();
+$orderStmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -248,6 +265,42 @@ $orderHistory = [];
             font-size: 18px; 
             cursor: pointer; 
         }
+
+        /* Order History Styles */
+        .order-header {
+            font-weight: bold;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .order-row {
+            transition: background-color 0.2s;
+        }
+
+        .order-row:hover {
+            background-color: var(--light-gray);
+        }
+
+        .order-id strong {
+            color: var(--brand-black);
+            font-size: 14px;
+        }
+
+        .order-id small {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .delivery {
+            color: #666;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -286,16 +339,81 @@ $orderHistory = [];
             <div class="account-content">
                 <div class="order-history">
                     <h3 style="text-align:center; margin-bottom: 40px;">ORDER HISTORY</h3>
-                    <div class="order-header">
-                        <span>ORDERS</span>
-                        <span>STATUS</span>
-                        <span>EXPECTED DELIVERY</span>
-                    </div>
-                    <div id="orders">
+                    <?php if ($orderHistory->num_rows === 0): ?>
                         <p style="text-align: center; padding: 40px 0; color: #888;">
                             You haven't placed any orders yet.
                         </p>
-                    </div>
+                    <?php else: ?>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--mid-gray);">Order ID</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--mid-gray);">Products</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--mid-gray);">Total</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--mid-gray);">Status</th>
+                                    <th style="text-align: left; padding: 12px; border-bottom: 1px solid var(--mid-gray);">Order Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php while ($order = $orderHistory->fetch_assoc()): 
+                                    // Get currency symbol
+                                    $symbol = match ($order['Currency']) {
+                                        'PHP' => '₱',
+                                        'USD' => '$',
+                                        'WON' => '₩',
+                                        default => ''
+                                    };
+
+                                    // Fetch product details for this order
+                                    $itemsStmt = $conn->prepare("
+                                        SELECT P.ProductName as Name, CI.QuantityOrdered, P.Size 
+                                        FROM CART_ITEMS CI
+                                        JOIN PRODUCT P ON CI.ref_productID = P.productID 
+                                        WHERE CI.ref_cartID = ?
+                                    ");
+                                    $itemsStmt->bind_param("s", $order['cartID']);
+                                    $itemsStmt->execute();
+                                    $items = $itemsStmt->get_result();
+                                    $products = "";
+                                    while ($item = $items->fetch_assoc()) {
+                                        $products .= "<div style='margin-bottom:5px;'><strong>{$item['Name']}</strong><br>
+                                                    Qty: {$item['QuantityOrdered']} | Size: {$item['Size']}</div>";
+                                    }
+                                    $itemsStmt->close();
+                                ?>
+                                    <tr>
+                                        <td style="padding: 12px; border-bottom: 1px solid var(--light-gray);">
+                                            <?= htmlspecialchars($order['cartID']) ?>
+                                        </td>
+                                        <td style="padding: 12px; border-bottom: 1px solid var(--light-gray);">
+                                            <?= $products ?>
+                                        </td>
+                                        <td style="padding: 12px; border-bottom: 1px solid var(--light-gray);">
+                                            <?= $symbol . number_format($order['Total'], 2) ?>
+                                        </td>
+                                        <td style="padding: 12px; border-bottom: 1px solid var(--light-gray);">
+                                            <span class="status-badge" style="
+                                                padding: 5px 10px;
+                                                border-radius: 12px;
+                                                font-size: 12px;
+                                                background-color: <?= $order['Status'] === 'Delivered' ? '#e8f5e9' : 
+                                                                    ($order['Status'] === 'In Transit' ? '#fff3e0' : 
+                                                                    ($order['Status'] === 'To Ship' ? '#e3f2fd' : '#f5f5f5')) ?>;
+                                                color: <?= $order['Status'] === 'Delivered' ? '#2e7d32' : 
+                                                        ($order['Status'] === 'In Transit' ? '#ef6c00' : 
+                                                        ($order['Status'] === 'To Ship' ? '#1565c0' : '#616161')) ?>;
+                                            ">
+                                                <?= htmlspecialchars($order['Status']) ?>
+                                            </span>
+                                        </td>
+                                        <td style="padding: 12px; border-bottom: 1px solid var(--light-gray);">
+                                            <?= date('M d, Y', strtotime($order['Order_Date'])) ?>
+                                        </td>
+                                    </tr>
+                                <?php endwhile; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
                 </div>
 
                 <div class="account-details">

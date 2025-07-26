@@ -177,7 +177,7 @@ $users = $result->fetch_all(MYSQLI_ASSOC);
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="Login.html">Log Out</a>
+    <a href="login.php">Log Out</a>
   </div>
 </div>
 

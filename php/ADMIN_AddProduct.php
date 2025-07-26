@@ -93,14 +93,14 @@ $imageBase64 = '';
     <div>
       <h4>DASHBOARD</h4>
       <a href="ADMIN_Dashboard.php" class="active">Product</a>
-      <a href="ADMIN_Orders.html">Order</a>
+      <a href="ADMIN_Orders.php">Order</a>
       <a href="view_products.php">Browse</a>
       <h4>ACCOUNT</h4>
       <a href="ADMIN_ManageUsers.php">Manage Users</a>
     </div>
     <div class="logout">
       <i class="fa-solid fa-right-from-bracket"></i>
-      <a href="../html/login.html">Log Out</a>
+      <a href="../php/login.php">Log Out</a>
     </div>
   </div>
 
