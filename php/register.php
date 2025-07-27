@@ -34,9 +34,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
-    $password = password_hash($_POST['Password'], PASSWORD_DEFAULT);
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
     $email = $_POST['email'];
-    $role = 'Customer'; // Default role, can be changed if needed
+    $role = 'Customer'; 
 
     // Prepare SQL and bind parameters
     $stmt = $conn->prepare("INSERT INTO USERS (userID, FirstName, LastName, Password, Email, Role) VALUES (?, ?, ?, ?, ?, ?)");

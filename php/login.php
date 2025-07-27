@@ -18,15 +18,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $stmt->execute();
     $result = $stmt->get_result();
 
+  // Check if the user exists
     if ($result->num_rows === 1) {
         $row = $result->fetch_assoc();
-
-        // ⚠️ Replace this with password_hash verification in production
-        if ($password === $row['Password']) {
+        
+        // Use password_verify() to check if the entered password matches the hashed password
+        if (password_verify($password, $row['Password'])) {
+            // The password is correct
             $_SESSION['userID'] = $row['userID'];
             $_SESSION['role'] = $row['Role'];
 
-            // ✅ Role-based redirection
+            // Role-based redirection
             if ($row['Role'] === 'Admin') {
                 header("Location: ADMIN_Dashboard.php");
             } else {
