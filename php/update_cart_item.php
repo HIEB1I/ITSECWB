@@ -1,75 +1,43 @@
 <?php
 session_start();
+require_once 'db_connect.php';
 
 if (!isset($_SESSION['userID'])) {
-    exit("Access denied.");
+    header('Location: login.php');
+    exit();
 }
 
-require_once 'db_connect.php'; 
-
-$userID = $_SESSION['userID'];
-
-if (!isset($_POST['cartItemsID']) || empty($_POST['cartItemsID'])) {
-    exit("Missing cart item ID.");
-}
-
-$cartItemID = $_POST['cartItemsID'];
-
-// Fetch current quantity AND cartID
-$stmt = $conn->prepare("
-    SELECT CI.QuantityOrdered, CI.ref_cartID 
-    FROM CART_ITEMS CI 
-    JOIN CART C ON CI.ref_cartID = C.cartID 
-    WHERE CI.cartItemsID = ? AND C.ref_userID = ? AND C.Purchased = FALSE
-");
-$stmt->bind_param("ss", $cartItemID, $userID);
-$stmt->execute();
-$result = $stmt->get_result();
-if ($result->num_rows === 0) {
-    exit("Item not found.");
-}
-$currentRow = $result->fetch_assoc();
-$currentQty = (int)$currentRow['QuantityOrdered'];
-$cartID = $currentRow['ref_cartID']; // Get the cartID for later use
-$stmt->close();
-
-// Determine action
-if (isset($_POST['delete'])) {
-    $stmt = $conn->prepare("DELETE FROM CART_ITEMS WHERE cartItemsID = ?");
-    $stmt->bind_param("s", $cartItemID);
+if (isset($_POST['update']) || isset($_POST['delete'])) {
+    $cartItemsID = $_POST['cartItemsID'];
+    
+    // Get cartID for the item
+    $stmt = $conn->prepare("SELECT ref_cartID FROM CART_ITEMS WHERE cartItemsID = ?");
+    $stmt->bind_param("s", $cartItemsID);
     $stmt->execute();
+    $cartID = $stmt->get_result()->fetch_assoc()['ref_cartID'];
     $stmt->close();
 
-} elseif (isset($_POST['increase'])) {
-    $newQty = $currentQty + 1;
+    if (isset($_POST['delete'])) {
+        $stmt = $conn->prepare("DELETE FROM CART_ITEMS WHERE cartItemsID = ?");
+        $stmt->bind_param("s", $cartItemsID);
+        $stmt->execute();
+        $stmt->close();
+    } else {
+        $quantity = $_POST['Quantity'];
+        $stmt = $conn->prepare("UPDATE CART_ITEMS SET QuantityOrdered = ? WHERE cartItemsID = ?");
+        $stmt->bind_param("is", $quantity, $cartItemsID);
+        $stmt->execute();
+        $stmt->close();
+    }
 
-    $stmt = $conn->prepare("UPDATE CART_ITEMS SET QuantityOrdered = ? WHERE cartItemsID = ?");
-    $stmt->bind_param("is", $newQty, $cartItemID);
+    // Update cart total using stored procedure
+    $stmt = $conn->prepare("CALL update_cart_total(?)");
+    $stmt->bind_param("s", $cartID);
     $stmt->execute();
     $stmt->close();
-
-} elseif (isset($_POST['decrease'])) {
-    $newQty = max(1, $currentQty - 1); // Minimum quantity of 1
-
-    $stmt = $conn->prepare("UPDATE CART_ITEMS SET QuantityOrdered = ? WHERE cartItemsID = ?");
-    $stmt->bind_param("is", $newQty, $cartItemID);
-    $stmt->execute();
-    $stmt->close();
-
-} elseif (isset($_POST['update'])) {
-    // Optional: add logic to confirm final value, or redirect without change
-    // For now, do nothing extra unless you add a visible input for new quantity
+    $conn->next_result();
 }
 
-// After updating cart items - now $cartID is properly defined
-$stmt = $conn->prepare("CALL update_cart_total(?)");
-$stmt->bind_param("s", $cartID);
-$stmt->execute();
-$stmt->close();
-
-$conn->close();
-
-// Redirect back to cart
-header("Location: CART_ViewCart.php");
+header('Location: CART_ViewCart.php');
 exit();
 ?>

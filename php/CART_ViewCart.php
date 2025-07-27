@@ -1,55 +1,166 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+
+// Add this function to handle image display
+function getImageTag($imageData, $altText) {
+    if ($imageData) {
+        $base64Image = base64_encode($imageData);
+        return "<img src='data:image/jpeg;base64,{$base64Image}' alt='" . htmlspecialchars($altText) . "'>";
+    }
+    return "<img src='../images/placeholder.jpg' alt='No image available'>";
+}
+
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
     exit();
 }
+
 $userID = $_SESSION['userID'];
+
 // Get active cart
 $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
 $stmt->bind_param("s", $userID);
 $stmt->execute();
 $result = $stmt->get_result();
+
 if ($result->num_rows === 0) {
     echo "<h3>Your cart is empty.</h3><a href='HOME_Homepage.php'>⬅ Browse Products</a>";
     exit();
 }
+
 $cartID = $result->fetch_assoc()['cartID'];
 $stmt->close();
-// Get cart items
-$sql = "SELECT CI.cartItemsID, P.ProductName, P.Price, CI.QuantityOrdered, (P.Price * CI.QuantityOrdered) AS SubTotal, P.Image, P.Size FROM CART_ITEMS CI JOIN PRODUCT P ON CI.ref_productID = P.productID WHERE CI.ref_cartID = ?";
+
+// Get cart items with converted prices
+$sql = "SELECT 
+    CI.cartItemsID, 
+    CI.ref_productID,
+    P.ProductName, 
+    P.Price as Price,
+    CI.QuantityOrdered,
+    P.QuantityAvail,
+    (P.Price * CI.QuantityOrdered) as SubTotal,
+    P.Image,
+    P.Size,
+    C.Total,
+    C.Currency,
+    C.Status 
+FROM CART_ITEMS CI 
+JOIN PRODUCT P ON CI.ref_productID = P.productID 
+JOIN CART C ON CI.ref_cartID = C.cartID
+WHERE CI.ref_cartID = ? AND C.Purchased = FALSE";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("s", $cartID);
 $stmt->execute();
 $result = $stmt->get_result();
-$total = 0;
 $cartItems = [];
 while ($row = $result->fetch_assoc()) {
     $cartItems[] = $row;
-    $total += $row['SubTotal'];
 }
 $stmt->close();
-// Update total in CART table
-$update = $conn->prepare("UPDATE CART SET Total = ? WHERE cartID = ?");
-$update->bind_param("ds", $total, $cartID);
-$update->execute();
-$update->close();
-// Get existing Currency & MOP to preselect
-$getCart = $conn->prepare("SELECT Currency, MOP FROM CART WHERE cartID = ?");
+
+// Use update_cart_total stored procedure
+$stmt = $conn->prepare("CALL update_cart_total(?)");
+$stmt->bind_param("s", $cartID);
+$stmt->execute();
+$stmt->close();
+$conn->next_result(); // Clear stored procedure results
+
+// Handle currency conversion if requested
+if (isset($_POST['currency']) && !empty($_POST['currency'])) {
+    $newCurrency = $_POST['currency'];
+    
+    $stmt = $conn->prepare("CALL convert_cart_currency(?, ?, @converted_total)");
+    $stmt->bind_param("ss", $cartID, $newCurrency);
+    $stmt->execute();
+    $stmt->close();
+    $conn->next_result();
+    
+    // Get the converted total
+    $result = $conn->query("SELECT @converted_total as total");
+    $convertedTotal = $result->fetch_assoc()['total'];
+    
+    // Update the cart with new currency and total
+    $stmt = $conn->prepare("UPDATE CART SET Currency = ?, Total = ? WHERE cartID = ?");
+    $stmt->bind_param("sds", $newCurrency, $convertedTotal, $cartID);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Update the currency symbols array and mapping
+$currencySymbols = [
+    'PHP' => '₱',
+    'USD' => '$',
+    'KRW' => '₩'  // Changed from WON to KRW to match database
+];
+
+// Get current cart info including total and currency
+$getCart = $conn->prepare("SELECT Total, Currency, MOP FROM CART WHERE cartID = ?");
 $getCart->bind_param("s", $cartID);
 $getCart->execute();
 $cartInfo = $getCart->get_result()->fetch_assoc();
 $getCart->close();
-$selectedCurrency = $cartInfo['Currency'] ?? '';
+
+$total = $cartInfo['Total'];
+$selectedCurrency = $cartInfo['Currency'] ?? 'PHP';
 $selectedMOP = $cartInfo['MOP'] ?? '';
-function getImageTag($imageData, $alt = '', $class = 'product-img') {
-    if ($imageData) {
-        $imgData = base64_encode($imageData);
-        return "<img src='data:image/png;base64,{$imgData}' alt='" . htmlspecialchars($alt) . "' class='" . htmlspecialchars($class) . "' style='width:80px;'>";
+
+// Get currency symbol
+$currencySymbol = $currencySymbols[$selectedCurrency] ?? '₱';
+
+// Add JavaScript for real-time currency conversion
+?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to handle currency change
+    function handleCurrencyChange(value) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '<?php echo $_SERVER['PHP_SELF']; ?>';
+        
+        const currencyInput = document.createElement('input');
+        currencyInput.type = 'hidden';
+        currencyInput.name = 'currency';
+        currencyInput.value = value;
+        
+        form.appendChild(currencyInput);
+        document.body.appendChild(form);
+        form.submit();
     }
-    return '';
-}
+
+    // Listen for changes on both currency selects
+    const headerCurrency = document.getElementById('headerCurrency');
+    const checkoutCurrency = document.getElementById('currency');
+
+    if (headerCurrency) {
+        headerCurrency.addEventListener('change', function() {
+            handleCurrencyChange(this.value);
+        });
+    }
+
+    if (checkoutCurrency) {
+        checkoutCurrency.addEventListener('change', function() {
+            handleCurrencyChange(this.value);
+        });
+    }
+});
+</script>
+<?php
+// After getting the selected currency, add this JavaScript
+?>
+<script>
+// Keep both currency selects in sync
+document.addEventListener('DOMContentLoaded', function() {
+    const headerCurrency = document.getElementById('headerCurrency');
+    const checkoutCurrency = document.getElementById('currency');
+    if (headerCurrency && checkoutCurrency) {
+        headerCurrency.value = '<?= $selectedCurrency ?>';
+        checkoutCurrency.value = '<?= $selectedCurrency ?>';
+    }
+});
+</script>
+<?php
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -78,7 +189,20 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
     .quantity-controls button { padding: 4px 10px; font-size: 14px; cursor: pointer; }
     .total { text-align: right; font-size: 18px; margin-top: 20px; }
     .checkout { text-align: right; margin-top: 20px; }
-    .checkout button { background: #000; color: white; padding: 12px 24px; border: none; cursor: pointer; }
+    .checkout button {
+    background: #000;
+    color: white;
+    padding: 12px;
+    border: none;
+    cursor: pointer;
+    width: 250px;
+    text-align: center;
+}
+
+.checkout button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
     footer { display: flex; justify-content: space-between; align-items: center; padding: 20px 40px; border-top: 1px solid #ccc; font-size: 14px; margin-top: 50px; }
     footer .social i { margin: 0 10px; font-size: 18px; cursor: pointer; }
     footer .copyright { font-size: 14px; }
@@ -89,7 +213,41 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
     html, body { height: 100%; }
     .page-wrapper { display: flex; flex-direction: column; min-height: 100vh; }
     .content { flex: 1; }
+    .cart-status { margin-top: 20px; font-size: 16px; }
+    .cart-status {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 5px;
+    margin: 20px 0;
+}
+    .stock-status { margin-top: 10px; font-size: 14px; color: #d9534f; }
+    .stock-warning { display: flex; align-items: center; gap: 5px; }
+    .stock-warning i { color: #d9534f; }
+    .stock-warning {
+    color: #dc3545;
+    margin-top: 5px;
+    font-size: 14px;
+}
   </style>
+  <script>
+function validateCheckout() {
+    // Check if cart is empty
+    if (!<?= !empty($cartItems) ? 'true' : 'false' ?>) {
+        alert('Your cart is empty!');
+        return false;
+    }
+
+    // Stock validation
+    <?php foreach ($cartItems as $item): ?>
+    if (<?= $item['QuantityOrdered'] ?> > <?= $item['QuantityAvail'] ?>) {
+        alert('Not enough stock for <?= addslashes($item['ProductName']) ?>');
+        return false;
+    }
+    <?php endforeach; ?>
+
+    return true;
+}
+</script>
 </head>
 <body>
   <div class="page-wrapper">
@@ -99,10 +257,10 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
       <a href="HOME_Homepage.php"><img src="../Logos/KW Logo.png" alt="KALYE WEST"></a>
     </div>
     <div class="utils">
-      <select>
-        <option selected>Php</option>
-        <option>USD</option>
-        <option>KRW</option>
+      <select name="currency" id="headerCurrency">
+        <option value="PHP" <?= ($selectedCurrency === 'PHP' ? 'selected' : '') ?>>PHP</option>
+        <option value="USD" <?= ($selectedCurrency === 'USD' ? 'selected' : '') ?>>USD</option>
+        <option value="KRW" <?= ($selectedCurrency === 'KRW' ? 'selected' : '') ?>>KRW</option>
       </select>
       <a href="PROFILE_User.php"><i class="fa-regular fa-user"></i></a>
       <a href="CART_ViewCart.php"><i class="fa-solid fa-bag-shopping"></i></a>
@@ -116,70 +274,77 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
   <div class="cart-container">
     <h2 style="margin: 40px 0 20px;">Your Cart</h2>
     <table>
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Quantity</th>
-          <th>Price</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody>
-        <?php if (empty($cartItems)) { ?>
-          <tr><td colspan="5" style="text-align:center; padding: 40px; font-size: 16px; color: #666;">Your cart is empty</td></tr>
-        <?php } else {
-          foreach ($cartItems as $row) { ?>
-          <tr>
-            <td>
-              <div class="product-info">
-                <?= getImageTag($row['Image'], $row['ProductName']) ?>
-                <div>
-                  <strong><?= htmlspecialchars($row['ProductName']) ?></strong><br>
-                  Size: <?= htmlspecialchars($row['Size']) ?>
-                </div>
-              </div>
-            </td>
-            <td>
-              <form action='update_cart_item.php' method='post' style='display:inline;'>
-                <input type='number' name='Quantity' min='1' value='<?= htmlspecialchars($row['QuantityOrdered']) ?>' required style='width: 60px;'>
-                <input type='hidden' name='cartItemsID' value='<?= htmlspecialchars($row['cartItemsID']) ?>'>
-                <button type='submit' name='update'>Update</button>
-                <button type='submit' name='delete' onclick="return confirm('Remove this item?')">🗑️</button>
-              </form>
-            </td>
-            <td>₱<?= number_format($row['Price'], 2) ?></td>
-            <td>₱<?= number_format($row['SubTotal'], 2) ?></td>
-            <td></td>
-          </tr>
-        <?php }} ?>
-      </tbody>
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php if (empty($cartItems)) { ?>
+                <tr>
+                    <td colspan="5" style="text-align:center; padding: 40px; font-size: 16px; color: #666;">
+                        Your cart is empty
+                    </td>
+                </tr>
+            <?php } else {
+                foreach ($cartItems as $row) { ?>
+                    <tr>
+                        <td>
+                            <div class="product-info">
+                                <?= getImageTag($row['Image'], $row['ProductName']) ?>
+                                <div>
+                                    <strong><?= htmlspecialchars($row['ProductName']) ?></strong><br>
+                                    Size: <?= htmlspecialchars($row['Size']) ?>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <form action='update_cart_item.php' method='post' style='display:inline;'>
+                                <input type='number' name='Quantity' min='1' 
+                                       value='<?= htmlspecialchars($row['QuantityOrdered']) ?>' 
+                                       required style='width: 60px;'>
+                                <input type='hidden' name='cartItemsID' 
+                                       value='<?= htmlspecialchars($row['cartItemsID']) ?>'>
+                                <button type='submit' name='update'>Update</button>
+                                <button type='submit' name='delete' onclick="return confirm('Remove this item?')">🗑️</button>
+                            </form>
+                        </td>
+                        <td>₱<?= number_format($row['Price'], 2) ?></td>
+                        <td>₱<?= number_format($row['SubTotal'], 2) ?></td>
+                    </tr>
+                <?php }
+            } ?>
+        </tbody>
     </table>
+    <div class="cart-status">
+        <strong>Cart Status:</strong> <?= htmlspecialchars($cartItems[0]['Status'] ?? 'On-Going') ?>
+        <?php if (!empty($cartItems)): ?>
+            <div class="stock-status">
+                <?php foreach ($cartItems as $item): ?>
+                    <?php if ($item['QuantityOrdered'] > $item['QuantityAvail']): ?>
+                        <div class="stock-warning">
+                            ⚠️ Not enough stock for <?= htmlspecialchars($item['ProductName']) ?>
+                        </div>
+                    <?php endif; ?>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
+    </div>
     <div class="cart-summary">
-      <div class="total">
-        ESTIMATED TOTAL: <span id="estimatedTotal">₱<?= number_format($total ?? 0, 2) ?></span>
-      </div>
-      <div class="checkout">
-        <form action="CART_PlaceOrder.php" method="post">
-          <label for='currency'><strong>Currency:</strong></label>
-          <select name='currency' id='currency' required>
-            <option value=''>-- Select --</option>
-            <option value='PHP' <?= ($selectedCurrency === 'PHP' ? 'selected' : '') ?>>PHP</option>
-            <option value='USD' <?= ($selectedCurrency === 'USD' ? 'selected' : '') ?>>USD</option>
-            <option value='WON' <?= ($selectedCurrency === 'WON' ? 'selected' : '') ?>>WON</option>
-          </select>
-          <br><br>
-          <label for='payment_method'><strong>Mode of Payment:</strong></label>
-          <select name='payment_method' id='payment_method' required>
-            <option value=''>-- Select --</option>
-            <option value='COD' <?= ($selectedMOP === 'COD' ? 'selected' : '') ?>>COD</option>
-            <option value='GCash' <?= ($selectedMOP === 'GCash' ? 'selected' : '') ?>>GCASH</option>
-            <option value='Card' <?= ($selectedMOP === 'Card' ? 'selected' : '') ?>>CARD</option>
-          </select>
-          <br><br>
-          <input type='hidden' name='cartID' value='<?= htmlspecialchars($cartID) ?>'>
-          <button type="submit" name="checkout">Check out</button>
-        </form>
-      </div>
+        <div class="total">
+            ESTIMATED TOTAL: <?= $currencySymbol . number_format($total, 2) ?>
+        </div>
+        <div class="checkout">
+            <form action="CART_PlaceOrder.php" method="POST">
+                <input type="hidden" name="cartID" value="<?= htmlspecialchars($cartID) ?>">
+                <button type="submit" class="checkout-btn" <?= empty($cartItems) ? 'disabled' : '' ?>>
+                    Proceed to Checkout
+                </button>
+            </form>
+        </div>
     </div>
     </div>
   </div>

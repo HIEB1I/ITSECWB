@@ -260,6 +260,9 @@ CREATE USER 'admin_user'@'localhost';
 GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 FLUSH PRIVILEGES;
 
+
+
+
 CREATE TABLE currencies (
 code VARCHAR(5) PRIMARY KEY,
 symbol VARCHAR(5),
@@ -267,6 +270,62 @@ exchange_rate_to_php DECIMAL(10, 4) DEFAULT 1.0000,
 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+
+
+DELIMITER //
+CREATE PROCEDURE get_customer_summary(
+    IN p_userID VARCHAR(10)
+)
+BEGIN
+    SELECT 
+        U.FirstName,
+        U.LastName,
+        U.Email,
+        COUNT(DISTINCT C.cartID) as total_orders,
+        SUM(CASE WHEN C.Currency = 'PHP' THEN C.Total ELSE 0 END) as total_spent_php,
+        MAX(C.Order_Date) as last_order_date,
+        GROUP_CONCAT(DISTINCT C.MOP) as preferred_payment_methods,
+        COUNT(DISTINCT CASE WHEN C.Status = 'Delivered' THEN C.cartID END) as completed_orders,
+        COUNT(DISTINCT CASE WHEN C.Status = 'To Ship' THEN C.cartID END) as pending_orders
+    FROM USERS U
+    LEFT JOIN CART C ON U.userID = C.ref_userID AND C.Purchased = TRUE
+    WHERE U.userID = p_userID
+    GROUP BY U.userID;
+END //
+DELIMITER ;
+
+
+DELIMITER //
+CREATE PROCEDURE convert_cart_currency(
+    IN p_cartID VARCHAR(10),
+    IN p_new_currency ENUM('PHP', 'USD', 'WON'),
+    OUT p_converted_total DECIMAL(10,2)
+)
+BEGIN
+    DECLARE base_total DECIMAL(10,2);
+    DECLARE exchange_rate DECIMAL(10,4);
+    
+    -- Get cart's current total in PHP
+    SELECT Total INTO base_total
+    FROM CART 
+    WHERE cartID = p_cartID;
+    
+    -- Get exchange rate from currencies table
+    SELECT exchange_rate_to_php INTO exchange_rate
+    FROM currencies
+    WHERE code = p_new_currency;
+      
+    -- Calculate and update
+    SET p_converted_total = base_total * exchange_rate;
+    
+    UPDATE CART 
+    SET Total = p_converted_total,
+        Currency = p_new_currency
+    WHERE cartID = p_cartID;
+    
+END //
+DELIMITER ;
 
 
 DELIMITER //

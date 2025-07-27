@@ -52,7 +52,6 @@ if (isset($_POST['placeOrder'])) {
     $address = trim($_POST['address']);
     $paymentMethod = $_POST['payment'];
     
-    // Update user details first
     try {
         // Start transaction
         $conn->begin_transaction();
@@ -66,14 +65,29 @@ if (isset($_POST['placeOrder'])) {
         $updateUser->bind_param("ssss", $firstName, $lastName, $address, $userID);
         $updateUser->execute();
         
-        // Set required variables for checkout.php
-        $_POST['currency'] = 'PHP';
-        $_POST['payment_method'] = $paymentMethod;
+        // Update cart status and payment method
+        $updateCart = $conn->prepare("
+            UPDATE CART 
+            SET MOP = ?, Status = 'To Ship', Purchased = TRUE
+            WHERE cartID = ?
+        ");
+        $updateCart->bind_param("ss", $paymentMethod, $cartID);
+        $updateCart->execute();
         
-        // Include checkout.php to handle stock check and cart update
-        require 'checkout.php';
+        // Update product quantities
+        foreach ($cartItems as $item) {
+            $updateStock = $conn->prepare("
+                UPDATE PRODUCT 
+                SET QuantityAvail = QuantityAvail - ? 
+                WHERE productID = ?
+            ");
+            $updateStock->bind_param("is", $item['QuantityOrdered'], $item['ref_productID']);
+            $updateStock->execute();
+        }
         
-        // If we get here, checkout was successful
+        $conn->commit();
+        
+        // Redirect to order confirmation
         header("Location: CART_OrderConfirmation.php");
         exit();
         

@@ -23,14 +23,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $newID = 'P00001';
   }
 
-  // Handle image upload - ensure $imageData is never null
-  $imageData = '';
+  $imageData = null;
   if (isset($_FILES['image']) && $_FILES['image']['error'] === 0) {
     $imageData = file_get_contents($_FILES['image']['tmp_name']);
   }
 
   $stmt = $conn->prepare("INSERT INTO PRODUCT (productID, ProductName, Category, Description, Size, QuantityAvail, Price, Image) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
   $stmt->bind_param("sssssiis", $newID, $name, $category, $description, $size, $quantity, $price, $imageData);
+
 
   if ($stmt->execute()) {
     header("Location: ADMIN_Dashboard.php");

@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // Ensure user is logged in
 if (!isset($_SESSION['userID'])) {
@@ -9,6 +11,8 @@ if (!isset($_SESSION['userID'])) {
 require_once 'db_connect.php'; 
 
 $userID = $_SESSION['userID'];
+
+$conn->query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
 
 // Begin transaction
 $conn->autocommit(FALSE);
@@ -85,7 +89,7 @@ try {
     // ✅ Step 5: Commit
     $conn->commit();
     echo "<h3>✅ Checkout successful!</h3>";
-    echo "<a href='view_products.php'>Shop Again</a>";
+    echo "<a href='HOME_Homepage.php'>Shop Again</a>";
 
 } catch (Exception $e) {
     // ❌ Step 6: Rollback

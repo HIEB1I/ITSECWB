@@ -23,16 +23,22 @@ if (!isset($_SESSION['userID'])) {
 
 // When user needs a new cart
 if (!isset($_SESSION['cartID'])) {
-    // Create a new cart for the user
-    $stmt = $conn->prepare("CALL create_new_cart(?)");
-    $stmt->bind_param("s", $_SESSION['userID']);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    $cart = $result->fetch_assoc();
+    // Generate new cart ID
+    $result = $conn->query("SELECT cartID FROM CART ORDER BY cartID DESC LIMIT 1");
+    if ($result && $result->num_rows > 0) {
+        $lastID = $result->fetch_assoc()['cartID'];
+        $nextNum = (int)substr($lastID, 1) + 1;
+        $newCartID = 'C' . str_pad($nextNum, 5, '0', STR_PAD_LEFT);
+    } else {
+        $newCartID = 'C00001'; // First cart
+    }
 
-    // Check if cart creation succeeded
-    if ($cart) {
-        $_SESSION['cartID'] = $cart['new_cartID']; // Store the new cart ID in session
+    // Create new cart
+    $stmt = $conn->prepare("INSERT INTO CART (cartID, Total, Purchased, ref_userID) VALUES (?, 0, FALSE, ?)");
+    $stmt->bind_param("ss", $newCartID, $_SESSION['userID']);
+    
+    if ($stmt->execute()) {
+        $_SESSION['cartID'] = $newCartID;
     } else {
         die('Failed to create a new cart.');
     }
