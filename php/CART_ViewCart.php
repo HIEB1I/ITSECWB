@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 <?php
-// After getting the selected currency, add this JavaScript
+
 ?>
 <script>
 // Keep both currency selects in sync
