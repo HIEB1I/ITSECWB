@@ -214,7 +214,7 @@ require_once 'db_connect.php';
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="../html/login.html">Log Out</a>
+    <a href="../php/login.php">Log Out</a>
   </div>
 </div>
 
