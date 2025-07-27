@@ -100,9 +100,6 @@ if (!$product) {
         <button data-size="MEDIUM" onclick="selectSize(this)">MEDIUM</button>
         <button data-size="LARGE" onclick="selectSize(this)">LARGE</button>
         <button data-size="EXTRA LARGE" onclick="selectSize(this)">EXTRA LARGE</button>
-        <button data-size="2X LARGE" onclick="selectSize(this)">2X LARGE</button>
-        <button data-size="3X LARGE" onclick="selectSize(this)">3X LARGE</button>
-        <button data-size="4X LARGE" onclick="selectSize(this)">4X LARGE</button>
       </div>
       <div class="quantity">
         <button onclick="changeQuantity(-1)">-</button>
