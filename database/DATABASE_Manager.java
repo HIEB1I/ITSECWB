@@ -268,55 +268,6 @@ updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
--- create order
-DELIMITER //
-CREATE PROCEDURE create_new_cart(IN p_userID VARCHAR(10))
-BEGIN
-    DECLARE new_cartID VARCHAR(10);
-    
-    -- Generate new cart ID
-    SELECT CONCAT('C', LPAD(IFNULL(MAX(SUBSTRING(cartID, 2)) + 1, 1), 5, '0'))
-    INTO new_cartID
-    FROM CART;
-    
-    -- Create new cart
-    INSERT INTO CART (cartID, Total, Purchased, ref_userID)
-    VALUES (new_cartID, 0, FALSE, p_userID);
-    
-    SELECT new_cartID;
-END //
-DELIMITER ;
-
--- add product procedure
-
-DELIMITER //
-CREATE PROCEDURE add_new_product(
-    IN p_name VARCHAR(200),
-    IN p_size ENUM('Extra-Small', 'Small', 'Medium', 'Large', 'Extra-Large'),
-    IN p_category ENUM('TEES', 'BOTTOMS', 'LAYERING'),
-    IN p_description VARCHAR(500),
-    IN p_quantity INT,
-    IN p_price DOUBLE
-)
-BEGIN
-    DECLARE new_productID VARCHAR(10);
-    
-    -- Generate new product ID
-    SELECT CONCAT('P', LPAD(IFNULL(MAX(SUBSTRING(productID, 2)) + 1, 1), 5, '0'))
-    INTO new_productID
-    FROM PRODUCT;
-    
-    INSERT INTO PRODUCT (
-        productID, ProductName, Size, Category, 
-        Description, QuantityAvail, Price
-    ) VALUES (
-        new_productID, p_name, p_size, p_category,
-        p_description, p_quantity, p_price
-    );
-    
-    SELECT new_productID;
-END //
-DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE get_user_orders(IN p_userID VARCHAR(10))
@@ -372,5 +323,6 @@ DELIMITER ;
 
 GRANT EXECUTE ON PROCEDURE dbadm.get_user_orders TO 'customer_user'@'localhost';
 GRANT EXECUTE ON dbadm.* TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.check_product_stock TO 'customer_user'@'localhost';
 
 */

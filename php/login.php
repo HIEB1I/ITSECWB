@@ -9,37 +9,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die("Connection failed: " . $conn->connect_error);
     }
 
-    $email = trim($_POST['email']);
-    $password = trim($_POST['password']);
+    // Sanitize and validate input
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
 
-    // Fetch user data
-    $stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
-    $stmt->bind_param("s", $email);
-    $stmt->execute();
-    $result = $stmt->get_result();
-
-  // Check if the user exists
-    if ($result->num_rows === 1) {
-        $row = $result->fetch_assoc();
-        
-        // Use password_verify() to check if the entered password matches the hashed password
-        if (password_verify($password, $row['Password'])) {
-            // The password is correct
-            $_SESSION['userID'] = $row['userID'];
-            $_SESSION['role'] = $row['Role'];
-
-            // Role-based redirection
-            if ($row['Role'] === 'Admin') {
-                header("Location: ADMIN_Dashboard.php");
-            } else {
-                header("Location: HOME_Homepage.php");
-            }
-            exit();
-        } else {
-            $error_message = "❌ Incorrect password";
-        }
+    // Check if the form fields are not empty
+    if (empty($email) || empty($password)) {
+        $error_message = "❌ Please fill in both the email and password.";
     } else {
-        $error_message = "❌ Email not found";
+        // Fetch user data
+        $stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        // Check if the user exists
+        if ($result->num_rows === 1) {
+            $row = $result->fetch_assoc();
+
+            // Use password_verify() to check if the entered password matches the hashed password
+            if (password_verify($password, $row['Password'])) {
+                // The password is correct
+                $_SESSION['userID'] = $row['userID'];
+                $_SESSION['role'] = $row['Role'];
+
+                // Role-based redirection
+                if ($row['Role'] === 'Admin') {
+                    header("Location: ADMIN_Dashboard.php");
+                } else {
+                    header("Location: HOME_Homepage.php");
+                }
+                exit();
+            } else {
+                $error_message = "❌ Incorrect password";
+            }
+        } else {
+            $error_message = "❌ Email not found";
+        }
     }
 
     $stmt->close();
@@ -60,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       margin: 0;
       padding: 0;
     }
-    
+
     .logo {
       margin-top: 5px;
       margin-bottom: 5px;

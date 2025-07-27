@@ -95,14 +95,14 @@ if (!$product) {
       <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
       <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
       <div class="sizes" id="sizes">
-        <button class="selected" onclick="selectSize(this)">EXTRA SMALL</button>
-        <button onclick="selectSize(this)">SMALL</button>
-        <button onclick="selectSize(this)">MEDIUM</button>
-        <button onclick="selectSize(this)">LARGE</button>
-        <button onclick="selectSize(this)">EXTRA LARGE</button>
-        <button onclick="selectSize(this)">2X LARGE</button>
-        <button onclick="selectSize(this)">3X LARGE</button>
-        <button onclick="selectSize(this)">4X LARGE</button>
+        <button class="selected" data-size="EXTRA SMALL" onclick="selectSize(this)">EXTRA SMALL</button>
+        <button data-size="SMALL" onclick="selectSize(this)">SMALL</button>
+        <button data-size="MEDIUM" onclick="selectSize(this)">MEDIUM</button>
+        <button data-size="LARGE" onclick="selectSize(this)">LARGE</button>
+        <button data-size="EXTRA LARGE" onclick="selectSize(this)">EXTRA LARGE</button>
+        <button data-size="2X LARGE" onclick="selectSize(this)">2X LARGE</button>
+        <button data-size="3X LARGE" onclick="selectSize(this)">3X LARGE</button>
+        <button data-size="4X LARGE" onclick="selectSize(this)">4X LARGE</button>
       </div>
       <div class="quantity">
         <button onclick="changeQuantity(-1)">-</button>
@@ -111,6 +111,7 @@ if (!$product) {
       </div>
       <form id="addToCartForm" action="add_to_cart.php" method="post" style="margin-top: 20px;">
         <input type="hidden" name="productID" value="<?= htmlspecialchars($product['productID']) ?>">
+        <input type="hidden" id="selectedSize" name="size" value="EXTRA SMALL">
         <label for="quantity">Quantity:</label>
         <input type="number" id="quantity" name="Quantity" value="1" min="1" required style="width: 60px;">
         <button type="submit" class="add-to-cart">Add to cart</button>
@@ -130,38 +131,60 @@ if (!$product) {
       <a href="https://www.instagram.com/mnlaofficial/?hl=en" target="_blank"><i class="fa-brands fa-instagram"></i></a>
       <a href="https://www.tiktok.com/@mnlaofficial?_t=ZS-8xh9NMarft4&_r=1" target="_blank"><i class="fa-brands fa-tiktok"></i></a>
     </div>
-    <div class="copyright">2025, KALYE WEST</div>
+    <div class="copyright">2025, KALYE WEST</div>
   </footer>
 
   <script>
     function changeQuantity(delta) {
       const quantityElem = document.getElementById('quantityValue');
+      const quantityInput = document.getElementById('quantity');
       let current = parseInt(quantityElem.innerText);
       if (current + delta >= 1) {
-        quantityElem.innerText = current + delta;
+        const newQuantity = current + delta;
+        quantityElem.innerText = newQuantity;
+        quantityInput.value = newQuantity;
       }
     }
+    
     function selectSize(button) {
       const allButtons = document.querySelectorAll('#sizes button');
       allButtons.forEach(btn => btn.classList.remove('selected'));
       button.classList.add('selected');
+      
+      // Update hidden input with selected size
+      const selectedSize = button.getAttribute('data-size');
+      document.getElementById('selectedSize').value = selectedSize;
     }
+    
     document.getElementById('addToCartForm').addEventListener('submit', function(e) {
       e.preventDefault();
       var form = this;
       var formData = new FormData(form);
+      
+      // Debug: log the form data
+      console.log('Form data being sent:');
+      for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+      }
+      
       fetch('add_to_cart.php', {
         method: 'POST',
         body: formData
       })
       .then(response => response.text())
       .then(data => {
-        document.getElementById('cartPopup').style.display = 'block';
-        setTimeout(() => {
-          document.getElementById('cartPopup').style.display = 'none';
-        }, 1200);
+        console.log('Server response:', data);
+        if (data.includes('successfully')) {
+          document.getElementById('cartPopup').style.display = 'block';
+          setTimeout(() => {
+            document.getElementById('cartPopup').style.display = 'none';
+          }, 1200);
+        } else {
+          alert('Error: ' + data);
+        }
       })
-      .catch(() => {
+      .catch(error => {
+        console.error('Fetch error:', error);
         alert('Failed to add to cart.');
       });
     });
