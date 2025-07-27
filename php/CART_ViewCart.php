@@ -71,6 +71,7 @@ $conn->next_result(); // Clear stored procedure results
 if (isset($_POST['currency']) && !empty($_POST['currency'])) {
     $newCurrency = $_POST['currency'];
     
+    // Call convert_cart_currency stored procedure
     $stmt = $conn->prepare("CALL convert_cart_currency(?, ?, @converted_total)");
     $stmt->bind_param("ss", $cartID, $newCurrency);
     $stmt->execute();
@@ -88,11 +89,11 @@ if (isset($_POST['currency']) && !empty($_POST['currency'])) {
     $stmt->close();
 }
 
-// Update the currency symbols array and mapping
+// Update currency symbols array
 $currencySymbols = [
     'PHP' => '₱',
     'USD' => '$',
-    'KRW' => '₩'  // Changed from WON to KRW to match database
+    'KRW' => '₩'
 ];
 
 // Get current cart info including total and currency
@@ -228,6 +229,20 @@ document.addEventListener('DOMContentLoaded', function() {
     margin-top: 5px;
     font-size: 14px;
 }
+.currency-selector {
+    margin-bottom: 10px;
+    text-align: right;
+}
+
+.currency-selector label {
+    margin-right: 10px;
+}
+
+.currency-selector select {
+    padding: 5px;
+    border: 1px solid var(--mid-gray);
+    border-radius: 4px;
+}
   </style>
   <script>
 function validateCheckout() {
@@ -248,6 +263,28 @@ function validateCheckout() {
     return true;
 }
 </script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const headerCurrency = document.getElementById('headerCurrency');
+    
+    if (headerCurrency) {
+        headerCurrency.addEventListener('change', function() {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '<?php echo $_SERVER['PHP_SELF']; ?>';
+            
+            const currencyInput = document.createElement('input');
+            currencyInput.type = 'hidden';
+            currencyInput.name = 'currency';
+            currencyInput.value = this.value;
+            
+            form.appendChild(currencyInput);
+            document.body.appendChild(form);
+            form.submit();
+        });
+    }
+});
+</script>
 </head>
 <body>
   <div class="page-wrapper">
@@ -258,10 +295,10 @@ function validateCheckout() {
     </div>
     <div class="utils">
       <select name="currency" id="headerCurrency">
-        <option value="PHP" <?= ($selectedCurrency === 'PHP' ? 'selected' : '') ?>>PHP</option>
-        <option value="USD" <?= ($selectedCurrency === 'USD' ? 'selected' : '') ?>>USD</option>
-        <option value="KRW" <?= ($selectedCurrency === 'KRW' ? 'selected' : '') ?>>KRW</option>
-      </select>
+    <option value="PHP" <?= ($selectedCurrency === 'PHP' ? 'selected' : '') ?>>PHP</option>
+    <option value="USD" <?= ($selectedCurrency === 'USD' ? 'selected' : '') ?>>USD</option>
+    <option value="KRW" <?= ($selectedCurrency === 'KRW' ? 'selected' : '') ?>>KRW</option>
+</select>
       <a href="PROFILE_User.php"><i class="fa-regular fa-user"></i></a>
       <a href="CART_ViewCart.php"><i class="fa-solid fa-bag-shopping"></i></a>
     </div>
@@ -334,18 +371,26 @@ function validateCheckout() {
         <?php endif; ?>
     </div>
     <div class="cart-summary">
-        <div class="total">
-            ESTIMATED TOTAL: <?= $currencySymbol . number_format($total, 2) ?>
-        </div>
-        <div class="checkout">
-            <form action="CART_PlaceOrder.php" method="POST">
-                <input type="hidden" name="cartID" value="<?= htmlspecialchars($cartID) ?>">
-                <button type="submit" class="checkout-btn" <?= empty($cartItems) ? 'disabled' : '' ?>>
-                    Proceed to Checkout
-                </button>
-            </form>
-        </div>
+    <div class="currency-selector">
+        <label for="currency">Currency:</label>
+        <select name="currency" id="currency">
+            <option value="PHP" <?= ($selectedCurrency === 'PHP' ? 'selected' : '') ?>>PHP</option>
+            <option value="USD" <?= ($selectedCurrency === 'USD' ? 'selected' : '') ?>>USD</option>
+            <option value="KRW" <?= ($selectedCurrency === 'KRW' ? 'selected' : '') ?>>KRW</option>
+        </select>
     </div>
+    <div class="total">
+        ESTIMATED TOTAL: <?= $currencySymbol . number_format($total, 2) ?>
+    </div>
+    <div class="checkout">
+        <form action="CART_PlaceOrder.php" method="POST">
+            <input type="hidden" name="cartID" value="<?= htmlspecialchars($cartID) ?>">
+            <button type="submit" class="checkout-btn" <?= empty($cartItems) ? 'disabled' : '' ?>>
+                Proceed to Checkout
+            </button>
+        </form>
+    </div>
+</div>
     </div>
   </div>
   <footer>
