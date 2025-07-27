@@ -162,7 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     <div><a href="../php/register.php">Create an account</a></div>
     <hr style="margin: 30px 0;">
-    <button class="guest-btn" onclick="location.href='GUEST_Homepage.html'">Continue as guest →</button>
+    <button class="guest-btn" onclick="location.href='GUEST_Homepage.php'">Continue as guest →</button>
   </div>
 
   <!-- Footer Logos -->

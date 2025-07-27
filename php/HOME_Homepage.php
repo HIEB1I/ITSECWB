@@ -23,12 +23,19 @@ if (!isset($_SESSION['userID'])) {
 
 // When user needs a new cart
 if (!isset($_SESSION['cartID'])) {
+    // Create a new cart for the user
     $stmt = $conn->prepare("CALL create_new_cart(?)");
     $stmt->bind_param("s", $_SESSION['userID']);
     $stmt->execute();
     $result = $stmt->get_result();
     $cart = $result->fetch_assoc();
-    $_SESSION['cartID'] = $cart['new_cartID'];
+
+    // Check if cart creation succeeded
+    if ($cart) {
+        $_SESSION['cartID'] = $cart['new_cartID']; // Store the new cart ID in session
+    } else {
+        die('Failed to create a new cart.');
+    }
     $stmt->close();
 }
 
@@ -258,7 +265,7 @@ $conn->close();
   <div class="grid">
     <?php if (!empty($bottoms)) {
         foreach ($bottoms as $product) { ?>
-        <a href="Products.phpl?id=<?= $product['productID'] ?>" class="card">
+        <a href="Products.php?id=<?= $product['productID'] ?>" class="card">
           <?= getImageTag($product['Image'], $product['ProductName']) ?>
           <div class="title"><?= $product['ProductName'] ?></div>
           <div class="brand"><?= $product['Category'] ?></div>
