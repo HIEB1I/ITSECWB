@@ -141,7 +141,7 @@ FOR EACH ROW
 BEGIN
   IF NEW.QuantityAvail < 0 THEN
     SIGNAL SQLSTATE '45000'
-    SET MESSAGE_TEXT = 'Invalid Value';
+    SET MESSAGE_TEXT = 'Quantity Available cannot be negative. Please enter a valid number.';
   END IF;
 END $$
 
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS PRODUCT_DELETE_AUDIT (
 );
 
 DELIMITER $$
-CREATE TRIGGER  delete_product
+CREATE TRIGGER  log_product_deletion
 AFTER DELETE ON PRODUCT
 FOR EACH ROW
 BEGIN
@@ -204,7 +204,7 @@ CREATE TABLE IF NOT EXISTS PRODUCT_EDIT_AUDIT (
 
 DELIMITER $$
 
-CREATE TRIGGER price_product
+CREATE TRIGGER log_product_update
 AFTER UPDATE ON PRODUCT
 FOR EACH ROW
 BEGIN
@@ -238,14 +238,20 @@ BEGIN
 END $$
 
 DELIMITER ;
+*/
 
+/* 
 CREATE USER 'admin_user'@'localhost';
-GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
+GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost'; 
+*/
 
+/* 
 CREATE USER 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.PRODUCT TO 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'staff_user'@'localhost';
+*/
 
+/*
 CREATE USER 'customer_user'@'localhost';
 GRANT SELECT ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'customer_user'@'localhost';
@@ -253,12 +259,17 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'loc
 GRANT UPDATE (QuantityAvail) ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 
 FLUSH PRIVILEGES;
+*/
 
+
+/* 
+In case mag error
 DROP USER IF EXISTS 'admin_user'@'localhost';
 
 CREATE USER 'admin_user'@'localhost';
 GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 FLUSH PRIVILEGES;
+
 
 
 

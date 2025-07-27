@@ -2,6 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
 

@@ -1,6 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
 require_once 'db_connect.php';
@@ -169,7 +169,6 @@ require_once 'db_connect.php';
       font-size: 18px;
     }
 
-    /* Delete Modal */
     .modal {
       position: fixed;
       top: 0;
@@ -220,7 +219,7 @@ require_once 'db_connect.php';
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="logout.php">Log Out</a>
+    <a href="../html/login.html">Log Out</a>
   </div>
 </div>
 

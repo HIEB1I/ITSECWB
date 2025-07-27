@@ -1,16 +1,15 @@
 <?php
 session_start();
 
-// Allow only Admins
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-    exit("Access denied.");
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
 
 require_once 'db_connect.php';
 
 $cartID = $_GET['cartID'] ?? null;
 if (!$cartID) {
-    exit("❌ No cart ID provided.");
+    exit("No cart ID provided.");
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -20,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'];
     $ship_date = $_POST['ship_date'] ?: null;
 
-   
     $stmtTotal = $conn->prepare("
         SELECT SUM(P.Price * CI.QuantityOrdered) AS baseTotal
         FROM CART_ITEMS CI
@@ -33,22 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $baseTotal = $resTotal->fetch_assoc()['baseTotal'];
     $stmtTotal->close();
 
-    $conversion = [
-        'PHP' => 1,
-        'USD' => 0.018,  // e.g., 1 PHP = 0.018 USD
-        'WON' => 24.3    // e.g., 1 PHP = 24.3 KRW
-    ];
-
-    $convertedTotal = $baseTotal * $conversion[$currency];
-
-
     $stmt = $conn->prepare("UPDATE CART 
         SET Total = ?, Currency = ?, MOP = ?, Status = ?, Ship_By_Date = ?
         WHERE cartID = ?");
-    $stmt->bind_param("dsssss", $convertedTotal, $currency, $payment, $status, $ship_date, $cartID);
+    $stmt->bind_param("dsssss", $baseTotal, $currency, $payment, $status, $ship_date, $cartID);
 
     if (!$stmt->execute()) {
-        $error = "❌ Failed to update order.";
+        $error = " Failed to update order.";
     } else {
         header("Location: ADMIN_Orders.php");
         exit();
@@ -73,11 +62,10 @@ $res = $stmt->get_result();
 if ($res->num_rows === 0) {
     exit("❌ Order not found.");
 }
-$r = $res->fetch_assoc(); // ✅ Now $r is defined and safe
+$r = $res->fetch_assoc(); 
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<!-- KEEP all head and styles exactly as given -->
 <head>
   <meta charset="UTF-8">
   <title>Admin Edit Order ‒ KALYE WEST</title>
@@ -342,7 +330,5 @@ $r = $res->fetch_assoc(); // ✅ Now $r is defined and safe
   </footer>
 </div>
 
-
-  <script> /* KEEP your existing JS if any */ </script>
 </body>
 </html>

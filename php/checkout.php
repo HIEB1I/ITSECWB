@@ -18,7 +18,7 @@ $conn->query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
 $conn->autocommit(FALSE);
 
 try {
-    // 🔹 Step 1: Get active cart
+    //  Get active cart
     $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
     $stmt->bind_param("s", $userID);
     $stmt->execute();
@@ -31,7 +31,7 @@ try {
     $cartID = $result->fetch_assoc()['cartID'];
     $stmt->close();
 
-    // 🔹 Step 2: Check stock
+    // Check stock
     $checkStockSQL = "
         SELECT CI.ref_productID, CI.QuantityOrdered, P.QuantityAvail, P.ProductName
         FROM CART_ITEMS CI
@@ -45,12 +45,12 @@ try {
 
     while ($row = $stockResult->fetch_assoc()) {
         if ((int)$row['QuantityOrdered'] > (int)$row['QuantityAvail']) {
-            throw new Exception("❌ Not enough stock for '{$row['ProductName']}'");
+            throw new Exception(" Not enough stock for '{$row['ProductName']}'");
         }
     }
     $checkStmt->close();
 
-    // 🔹 Step 3: Mark cart as purchased
+    //  Mark cart as purchased
     $currency = $_POST['currency'] ?? '';
     $mop = $_POST['payment_method'] ?? '';
 
@@ -58,7 +58,7 @@ try {
         throw new Exception("Invalid Currency or Mode of Payment.");
     }
 
-    // 🔹 Step 4: Update cart with payment info and mark as purchased
+    //  Update cart with payment info and mark as purchased
     $updateCart = $conn->prepare("
     UPDATE CART 
     SET Currency = ?, MOP = ?, Purchased = TRUE, Status = 'To Ship' 
@@ -72,7 +72,7 @@ try {
     $updateCart->close();
 
 
-    // 🔹 Step 5: Deduct stock
+    //  Deduct stock
     $deductStockSQL = "
         UPDATE PRODUCT P
         JOIN CART_ITEMS CI ON P.productID = CI.ref_productID
@@ -86,15 +86,15 @@ try {
     }
     $deductStmt->close();
 
-    // ✅ Step 5: Commit
+    // Commit
     $conn->commit();
     echo "<h3>✅ Checkout successful!</h3>";
     echo "<a href='HOME_Homepage.php'>Shop Again</a>";
 
 } catch (Exception $e) {
-    // ❌ Step 6: Rollback
+    //  Rollback
     $conn->rollback();
-    echo "<h3>❌ Checkout failed: " . $e->getMessage() . "</h3>";
+    echo "<h3> Checkout failed: " . $e->getMessage() . "</h3>";
     echo "<a href='view_products.php' style='display:inline-block; margin-top:10px; padding:8px 12px; background-color:#4CAF50; color:white; text-decoration:none; border-radius:5px;'>⬅ Back to Products</a>";
 }
 

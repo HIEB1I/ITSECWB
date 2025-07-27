@@ -8,7 +8,7 @@ require_once 'db_connect.php';
 
 $userID = $_SESSION['userID'];
 
-// ✅ Get active cart
+// Get active cart
 $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
 $stmt->bind_param("s", $userID); 
 $stmt->execute();
@@ -22,7 +22,7 @@ if ($result->num_rows === 0) {
 $cartID = $result->fetch_assoc()['cartID'];
 $stmt->close();
 
-// ✅ Get cart items
+//  Get cart items
 $sql = "SELECT CI.cartItemsID, P.ProductName, P.Price, CI.QuantityOrdered,
                (P.Price * CI.QuantityOrdered) AS SubTotal
         FROM CART_ITEMS CI
@@ -63,13 +63,13 @@ while ($row = $result->fetch_assoc()) {
 echo "</table>";
 echo "<h3>Total: ₱" . number_format($total, 2) . "</h3>";
 
-// ✅ Update total in CART table
+//  Update total in CART table
 $update = $conn->prepare("UPDATE CART SET Total = ? WHERE cartID = ?");
 $update->bind_param("ds", $total, $cartID);
 $update->execute();
 $update->close();
 
-// ✅ Get existing Currency & MOP to preselect
+//  Get existing Currency & MOP to preselect
 $getCart = $conn->prepare("SELECT Currency, MOP FROM CART WHERE cartID = ?");
 $getCart->bind_param("s", $cartID);
 $getCart->execute();
@@ -79,7 +79,7 @@ $getCart->close();
 $selectedCurrency = $cartInfo['Currency'] ?? '';
 $selectedMOP = $cartInfo['MOP'] ?? '';
 
-// ✅ Checkout form (with currency + MOP)
+// Checkout form (with currency + MOP)
 echo "
 <form action='checkout.php' method='post'>
     <label for='currency'><strong>Currency:</strong></label>

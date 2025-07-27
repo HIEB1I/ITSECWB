@@ -1,8 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-  echo 'Unauthorized';
-  exit;
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
 
 if (!isset($_POST['productID'])) {

@@ -2,9 +2,8 @@
 session_start();
 require_once 'db_connect.php';
 
-// Access control
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['Admin', 'Staff'])) {
-    exit(" Access denied.");
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
+  exit("Access denied.");
 }
 
 // Input
@@ -30,7 +29,7 @@ if (isset($_FILES['Image']) && $_FILES['Image']['size'] > 0) {
     $stmt->bind_param("ssssddss", $name, $size, $category, $desc, $qty, $price, $imagePlaceholder, $productID);
 
     // Send the binary data to placeholder
-    $stmt->send_long_data(6, $imgData); // Index is 0-based, so 6 = 7th param (Image)
+    $stmt->send_long_data(6, $imgData); // Index is 0-based, so 6 = 7th param 
 
 } else {
     $stmt = $conn->prepare("UPDATE PRODUCT 
@@ -49,5 +48,5 @@ if ($stmt->execute()) {
 $stmt->close();
 $conn->close();
 
-echo "<br><a href='ADMIN_Dashboard.php'>⬅ Back to Products</a>";
+echo "<br><a href='ADMIN_Dashboard.php'></a>";
 ?>

@@ -2,7 +2,7 @@
 session_start();
 require_once 'db_connect.php';
 
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
+if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
 }
 
@@ -118,7 +118,7 @@ $result = $conn->query("SELECT * FROM PRODUCT_DELETE_AUDIT ORDER BY Time_Deleted
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="logout.php">Log Out</a>
+    <a href="../html/login.html">Log Out</a>
   </div>
 </div>
 
