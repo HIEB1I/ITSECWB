@@ -257,32 +257,18 @@ GRANT SELECT ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'localhost';
 GRANT UPDATE (QuantityAvail) ON dbadm.PRODUCT TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.get_user_orders TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.check_product_stock TO 'customer_user'@'localhost';
+GRANT EXECUTE ON dbadm.* TO 'customer_user'@'localhost';
 
 FLUSH PRIVILEGES;
-*/
 
-
-/* 
 In case mag error
 DROP USER IF EXISTS 'admin_user'@'localhost';
 
 CREATE USER 'admin_user'@'localhost';
 GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 FLUSH PRIVILEGES;
-
-
-
-
-
-CREATE TABLE currencies (
-code VARCHAR(5) PRIMARY KEY,
-symbol VARCHAR(5),
-exchange_rate_to_php DECIMAL(10, 4) DEFAULT 1.0000,
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-
 
 DELIMITER //
 CREATE PROCEDURE get_customer_summary(
