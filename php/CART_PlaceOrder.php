@@ -353,24 +353,24 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
     </header>
 
     <div class="checkout-container">
-        <div class="form-section">
-            <h2>Check out</h2>
-            <?php if ($error_message): ?>
-                <div class="error"><?= htmlspecialchars($error_message) ?></div>
-            <?php endif; ?>
-            
-            <form method="POST" action="">
+        <form method="POST" action="checkout.php" id="checkoutForm">
+            <div class="form-section">
+                <h2>Check out</h2>
+                <?php if ($error_message): ?>
+                    <div class="error"><?= htmlspecialchars($error_message) ?></div>
+                <?php endif; ?>
+
                 <div class="form-group">Account<br>
                     <strong><?= htmlspecialchars($userInfo['Email']) ?></strong>
                 </div>
-                
+
                 <div class="form-group inline-inputs">
                     <input type="text" name="firstName" placeholder="First name" 
-                           value="<?= htmlspecialchars($userInfo['FirstName']) ?>" required>
+                        value="<?= htmlspecialchars($userInfo['FirstName']) ?>" required>
                     <input type="text" name="lastName" placeholder="Last name" 
-                           value="<?= htmlspecialchars($userInfo['LastName']) ?>" required>
+                        value="<?= htmlspecialchars($userInfo['LastName']) ?>" required>
                 </div>
-                
+
                 <div class="form-group">
                     <strong>Shipping Address</strong>
                     <textarea name="address" rows="3" placeholder="Enter your complete shipping address" required><?= htmlspecialchars($userInfo['Address']) ?></textarea>
@@ -380,11 +380,13 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
                     <strong>Payment</strong><br>
                     <small>All transactions are secure and encrypted.</small>
                     <div class="payment-options">
-                        <label><input type="radio" name="payment" value="GCash"> G-CASH/BANK</label>
-                        <label><input type="radio" name="payment" value="COD" checked> Cash on Delivery (COD)</label>
+                        <label><input type="radio" name="payment_method" value="GCash"> G-CASH/BANK</label>
+                        <label><input type="radio" name="payment_method" value="COD" checked> Cash on Delivery (COD)</label>
+                        <label><input type="radio" name="payment_method" value="Card"> Credit/Debit Card</label>
                     </div>
                 </div>
-                
+
+                <input type="hidden" name="currency" value="PHP">
                 <input type="hidden" name="cartID" value="<?= htmlspecialchars($cartID) ?>">
             </div>
 
@@ -400,14 +402,15 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
                         </div>
                     </div>
                 <?php endforeach; ?>
-                
+
                 <div class="total-line">
                     Total: <strong>₱<?= number_format($total, 2) ?></strong>
                 </div>
-                
+
                 <button type="submit" name="placeOrder" class="place-order-btn">Place order</button>
             </div>
         </form>
+
     </div>
 
     <footer>

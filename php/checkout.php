@@ -8,16 +8,16 @@ if (!isset($_SESSION['userID'])) {
 require_once 'db_connect.php';
 
 $userID = $_SESSION['userID'];
-$conn->autocommit(FALSE); // manual commit/rollback
+$conn->autocommit(FALSE); // Manual commit/rollback
 
 try {
-    // Set  isolation level
+    // Set highest isolation level to ensure safe concurrent access
     $conn->query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
 
     // Start transaction
     $conn->begin_transaction();
 
-    // Step 1: Get active cart
+    // Step 1: Get active cart for user
     $stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
     $stmt->bind_param("s", $userID);
     $stmt->execute();
@@ -30,7 +30,7 @@ try {
     $cartID = $result->fetch_assoc()['cartID'];
     $stmt->close();
 
-    // Step 2: Check product stock
+    // Step 2: Check stock availability for each product in the cart
     $checkStockSQL = "
         SELECT CI.ref_productID, CI.QuantityOrdered, P.QuantityAvail, P.ProductName
         FROM CART_ITEMS CI
@@ -42,14 +42,22 @@ try {
     $checkStmt->execute();
     $stockResult = $checkStmt->get_result();
 
+    $insufficientStock = [];
+
     while ($row = $stockResult->fetch_assoc()) {
         if ((int)$row['QuantityOrdered'] > (int)$row['QuantityAvail']) {
-            throw new Exception("Not enough stock for '{$row['ProductName']}'.");
+            $insufficientStock[] = $row['ProductName'];
         }
     }
+
     $checkStmt->close();
 
-    // 💳 Step 3: Mark cart as purchased
+    if (!empty($insufficientStock)) {
+        $productList = implode(', ', $insufficientStock);
+        throw new Exception("❌ Not enough stock for: $productList.");
+    }
+
+    // Step 3: Validate payment method and currency
     $currency = $_POST['currency'] ?? '';
     $mop = $_POST['payment_method'] ?? '';
 
@@ -57,7 +65,7 @@ try {
         throw new Exception("Invalid Currency or Mode of Payment.");
     }
 
-    // Step 4: Update cart with payment info
+    // Step 4: Update the CART table
     $updateCart = $conn->prepare("
         UPDATE CART 
         SET Currency = ?, MOP = ?, Purchased = TRUE, Status = 'To Ship' 
@@ -69,7 +77,7 @@ try {
     }
     $updateCart->close();
 
-    // Step 5: Deduct stock
+    // Step 5: Deduct product stock based on ordered quantity
     $deductStockSQL = "
         UPDATE PRODUCT P
         JOIN CART_ITEMS CI ON P.productID = CI.ref_productID
@@ -83,16 +91,17 @@ try {
     }
     $deductStmt->close();
 
-    // Step 6: Commit all changes
+    // Step 6: Commit transaction
     $conn->commit();
-    echo "<h3>Checkout successful!</h3>";
-    echo "<a href='view_products.php'>Shop Again</a>";
+
+    echo "<h3>✅ Checkout successful!</h3>";
+    echo "<a href='HOME_Homepage.php'>Shop Again</a>";
 
 } catch (Exception $e) {
-    // Step 7: Rollback on any error
+    // Step 7: Rollback all changes if any error occurred
     $conn->rollback();
-    echo "<h3>Checkout failed: " . $e->getMessage() . "</h3>";
-    echo "<a href='view_products.php' style='display:inline-block; margin-top:10px; padding:8px 12px; background-color:#4CAF50; color:white; text-decoration:none; border-radius:5px;'>⬅ Back to Products</a>";
+    echo "<h3>❌ Checkout failed: " . htmlspecialchars($e->getMessage()) . "</h3>";
+    echo "<a href='HOME_Homepage.php' style='display:inline-block; margin-top:10px; padding:8px 12px; background-color:#4CAF50; color:white; text-decoration:none; border-radius:5px;'>⬅ Back to Products</a>";
 }
 
 $conn->close();
