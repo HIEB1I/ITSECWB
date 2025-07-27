@@ -6,7 +6,7 @@ require_once 'db_connect.php';
 $currencySymbols = [
     'PHP' => '₱',
     'USD' => '$',
-    'KRW' => '₩'
+    'KRW' => '₩'  // Ensure proper Won symbol
 ];
 
 // Get cart info first
@@ -203,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>Your Cart ‒ KALYE WEST</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
@@ -385,8 +386,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type='submit' name='delete' onclick="return confirm('Remove this item?')">🗑️</button>
                             </form>
                         </td>
-                        <td><?= $currencySymbols[$selectedCurrency] ?><?= number_format($row['Price'], 2) ?></td>
-                        <td><?= $currencySymbols[$selectedCurrency] ?><?= number_format($row['SubTotal'], 2) ?></td>
+                        <td><?= htmlspecialchars($currencySymbols[$selectedCurrency] ?? '₱') ?><?= number_format($row['Price'], 2) ?></td>
+                        <td><?= htmlspecialchars($currencySymbols[$selectedCurrency] ?? '₱') ?><?= number_format($row['SubTotal'], 2) ?></td>
                     </tr>
                 <?php }
             } ?>
@@ -417,7 +418,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div class="total">
         ESTIMATED TOTAL: 
-        <?= isset($currencySymbols[$selectedCurrency]) ? $currencySymbols[$selectedCurrency] : '₱' ?>
+        <?= htmlspecialchars($currencySymbols[$selectedCurrency] ?? '₱') ?>
         <?= number_format($total ?? 0, 2) ?>
     </div>
     <div class="checkout">

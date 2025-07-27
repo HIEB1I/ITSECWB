@@ -76,11 +76,16 @@ try {
     // Commit transaction
     $conn->commit();
 
-    echo "Item added successfully!"; // Changed to match the success check in Products.php
+    // After successful cart update, redirect to cart view
+    header('Location: CART_ViewCart.php');
+    exit();
 
 } catch (Exception $e) {
     $conn->rollback();
-    echo "Error: " . $e->getMessage();
+    // Handle error case
+    $_SESSION['error'] = $e->getMessage();
+    header('Location: ' . $_SERVER['HTTP_REFERER']); // Go back to previous page if error
+    exit();
 }
 
 $conn->close();
