@@ -311,7 +311,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE convert_cart_currency(
     IN p_cartID VARCHAR(10),
-    IN p_new_currency ENUM('PHP', 'USD', 'WON'),
+    IN p_new_currency ENUM('PHP', 'USD', 'KRW'),
     OUT p_converted_total DECIMAL(10,2)
 )
 BEGIN
