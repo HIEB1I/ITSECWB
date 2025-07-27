@@ -37,8 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: ADMIN_Dashboard.php");
         exit();
     } else {
-        echo "<script>alert('Failed to update product.');</script>";
-    }
+    echo "<script>alert('Error: " . $conn->error . "');</script>";    
+  }
 }
 
 $stmt = $conn->prepare("SELECT * FROM PRODUCT WHERE productID = ?");
