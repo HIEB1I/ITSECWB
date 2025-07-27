@@ -46,21 +46,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Load current order
 $stmt = $conn->prepare("
-    SELECT C.cartID, C.ref_userID, C.Total, C.Currency, C.MOP as PaymentMethod,
-           C.Status, C.Order_Date, C.Ship_By_Date,
-           CI.QuantityOrdered as Qty,
-           P.ProductName, P.Size
+    SELECT 
+        C.cartID, 
+        C.ref_userID, 
+        C.Total, 
+        C.Currency, 
+        C.MOP as PaymentMethod,
+        C.Status, 
+        C.Order_Date, 
+        C.Ship_By_Date,
+        GROUP_CONCAT(CI.QuantityOrdered) as Qty,
+        GROUP_CONCAT(P.ProductName) as ProductName,
+        GROUP_CONCAT(P.Size) as Size
     FROM CART C
-    JOIN CART_ITEMS CI ON C.cartID = CI.ref_cartID
-    JOIN PRODUCT P ON CI.ref_productID = P.productID
+    LEFT JOIN CART_ITEMS CI ON C.cartID = CI.ref_cartID
+    LEFT JOIN PRODUCT P ON CI.ref_productID = P.productID
     WHERE C.cartID = ?
-    LIMIT 1
+    GROUP BY C.cartID
 ");
 $stmt->bind_param("s", $cartID);
-$stmt->execute();
+if (!$stmt->execute()) {
+    exit("Database error: " . $conn->error);
+}
 $res = $stmt->get_result();
 if ($res->num_rows === 0) {
-    exit("❌ Order not found.");
+    exit("Order not found. Cart ID: " . htmlspecialchars($cartID));
 }
 $r = $res->fetch_assoc(); 
 ?>
@@ -237,6 +247,17 @@ $r = $res->fetch_assoc();
       margin: 0 10px;
       font-size: 18px;
       color: black;
+    }
+
+    .product-entry {
+      margin-bottom: 20px;
+    }
+
+    hr {
+      border: 0;
+      height: 1px;
+      background: #ccc;
+      margin: 10px 0;
     }</style>
 </head>
 <body>
@@ -270,11 +291,20 @@ $r = $res->fetch_assoc();
       <p><strong>USER ID:</strong> <?= htmlspecialchars($r['ref_userID']) ?></p>
 
       <h4 style="margin-top: 20px; margin-bottom: 10px; font-size: 40px;">PRODUCT DETAILS</h4>
-      <p><strong>PRODUCT NAME:</strong> <?= htmlspecialchars($r['ProductName']) ?></p>
-      <p><strong>SIZE:</strong> <?= htmlspecialchars($r['Size']) ?></p>
+      <?php
+      $productNames = explode(',', $r['ProductName']);
+      $sizes = explode(',', $r['Size']);
+      $quantities = explode(',', $r['Qty']);
 
-      <label for="quantity">QUANTITY:</label>
-      <input type="number" id="quantity" name="quantity" value="<?= htmlspecialchars($r['Qty']) ?>">
+      for ($i = 0; $i < count($productNames); $i++) {
+          echo "<div class='product-entry'>";
+          echo "<p><strong>PRODUCT NAME:</strong> " . htmlspecialchars($productNames[$i]) . "</p>";
+          echo "<p><strong>SIZE:</strong> " . htmlspecialchars($sizes[$i]) . "</p>";
+          echo "<p><strong>QUANTITY:</strong> " . htmlspecialchars($quantities[$i]) . "</p>";
+          echo "<hr style='margin: 10px 0;'>";
+          echo "</div>";
+      }
+      ?>
 
       <label for="currency">CURRENCY:</label>
       <select id="currency" name="currency">
