@@ -96,6 +96,10 @@ $currencySymbols = [
     'KRW' => '₩'
 ];
 
+// Make sure selected currency is always set
+$selectedCurrency = $cartInfo['Currency'] ?? 'PHP';
+$currencySymbol = $currencySymbols[$selectedCurrency] ?? '₱';
+
 // Get current cart info including total and currency
 $getCart = $conn->prepare("SELECT Total, Currency, MOP FROM CART WHERE cartID = ?");
 $getCart->bind_param("s", $cartID);
@@ -349,8 +353,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <button type='submit' name='delete' onclick="return confirm('Remove this item?')">🗑️</button>
                             </form>
                         </td>
-                        <td>₱<?= number_format($row['Price'], 2) ?></td>
-                        <td>₱<?= number_format($row['SubTotal'], 2) ?></td>
+                        <td><?= $currencySymbols[$selectedCurrency] ?><?= number_format($row['Price'], 2) ?></td>
+                        <td><?= $currencySymbols[$selectedCurrency] ?><?= number_format($row['SubTotal'], 2) ?></td>
                     </tr>
                 <?php }
             } ?>
@@ -380,7 +384,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </select>
     </div>
     <div class="total">
-        ESTIMATED TOTAL: <?= $currencySymbol . number_format($total, 2) ?>
+        ESTIMATED TOTAL: <?= $currencySymbols[$selectedCurrency] ?><?= number_format($total, 2) ?>
     </div>
     <div class="checkout">
         <form action="CART_PlaceOrder.php" method="POST">
