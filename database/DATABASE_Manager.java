@@ -98,6 +98,20 @@ CREATE TABLE IF NOT EXISTS CART_ITEMS_AUDIT (
   FOREIGN KEY (ref_cartauditID) REFERENCES CART_AUDIT(cartauditID) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS currencies (
+code VARCHAR(5) PRIMARY KEY,
+symbol VARCHAR(5),
+exchange_rate_to_php DECIMAL(10, 4) DEFAULT 1.0000,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+INSERT INTO currencies (code, symbol, exchange_rate_to_php, updated_at)
+VALUES
+    ('KRW', '₩', 23.3200, '2025-07-27 20:30:37'),
+    ('PHP', '₱', 1.0000, '2025-07-27 20:30:37'),
+    ('USD', '$', 0.0180, '2025-07-27 20:30:37');
+
 DELIMITER $$
 
 CREATE TRIGGER cart_checkout_audit
@@ -249,7 +263,6 @@ GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 CREATE USER 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.PRODUCT TO 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'staff_user'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_AUDIT TO 'staff_user'@'localhost';
 */
 
 /*
@@ -257,7 +270,6 @@ CREATE USER 'customer_user'@'localhost';
 GRANT SELECT ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'localhost';
-GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS_AUDIT TO 'customer_user'@'localhost';
 GRANT UPDATE (QuantityAvail) ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 
 FLUSH PRIVILEGES;
@@ -270,20 +282,7 @@ DROP USER IF EXISTS 'admin_user'@'localhost';
 
 CREATE USER 'admin_user'@'localhost';
 GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
-FLUSH PRIVILEGES;
-
-
-
-
-
-CREATE TABLE currencies (
-code VARCHAR(5) PRIMARY KEY,
-symbol VARCHAR(5),
-exchange_rate_to_php DECIMAL(10, 4) DEFAULT 1.0000,
-updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
+FLUSH PRIVILEGES();
 
 
 DELIMITER //
