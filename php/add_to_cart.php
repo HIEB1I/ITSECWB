@@ -76,7 +76,6 @@ try {
     // Commit transaction
     $conn->commit();
 
-    // After successful cart update, redirect to cart view
     header('Location: CART_ViewCart.php');
     exit();
 
@@ -84,7 +83,7 @@ try {
     $conn->rollback();
     // Handle error case
     $_SESSION['error'] = $e->getMessage();
-    header('Location: ' . $_SERVER['HTTP_REFERER']); // Go back to previous page if error
+    header('Location: ' . $_SERVER['HTTP_REFERER']); 
     exit();
 }
 
