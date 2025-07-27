@@ -29,7 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
             // Use password_verify() to check if the entered password matches the hashed password
            // if ($password === $row['Password']) {
-           if (password_verify($password, $row['Password'])) {
+            if (password_verify($password, $row['Password'])) {
                 // The password is correct
                 $_SESSION['userID'] = $row['userID'];
                 $_SESSION['role'] = $row['Role'];

@@ -95,7 +95,7 @@ require_once 'db_connect.php';
       <h4>DASHBOARD</h4>
       <a href="ADMIN_Dashboard.php" class="active">Product</a>
       <a href="ADMIN_Orders.php">Order</a>
-      <a href="view_products.php">Browse</a>
+      <a href="HOME_Homepage.php">Browse</a>
       <h4>ACCOUNT</h4>
       <a href="ADMIN_ManageUsers.php">Manage Users</a>
     </div>

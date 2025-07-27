@@ -249,6 +249,7 @@ GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 CREATE USER 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.PRODUCT TO 'staff_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'staff_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_AUDIT TO 'staff_user'@'localhost';
 */
 
 /*
@@ -256,6 +257,7 @@ CREATE USER 'customer_user'@'localhost';
 GRANT SELECT ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART TO 'customer_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'localhost';
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS_AUDIT TO 'customer_user'@'localhost';
 GRANT UPDATE (QuantityAvail) ON dbadm.PRODUCT TO 'customer_user'@'localhost';
 
 FLUSH PRIVILEGES;
