@@ -396,3 +396,5 @@ GRANT EXECUTE ON dbadm.* TO 'customer_user'@'localhost';
 GRANT EXECUTE ON PROCEDURE dbadm.check_product_stock TO 'customer_user'@'localhost';
 
 */
+
+
