@@ -24,6 +24,32 @@ $product = $result->fetch_assoc();
 if (!$product) {
     die('Product not found.');
 }
+
+// Check initial stock for default size
+$initialSize = 'EXTRA SMALL'; // Default size
+$stmt = $conn->prepare("CALL check_product_stock(?, ?, @available, @product_name)");
+$stmt->bind_param("ss", $productID, $initialSize);
+$stmt->execute();
+$stmt->close();
+$conn->next_result();
+
+// Get the output parameters
+$result = $conn->query("SELECT @available as stock, @product_name as name");
+$stockInfo = $result->fetch_assoc();
+$currentStock = $stockInfo['stock'] ?? 0;
+
+// Get all sizes and their stocks for the same product name
+$stmt = $conn->prepare('SELECT Size, QuantityAvail FROM PRODUCT WHERE ProductName = ?');
+$stmt->bind_param('s', $product['ProductName']);
+$stmt->execute();
+$sizeStocks = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+
+// Create a size-to-stock mapping
+$stockBySize = [];
+foreach ($sizeStocks as $item) {
+    $stockBySize[$item['Size']] = $item['QuantityAvail'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -95,16 +121,24 @@ if (!$product) {
       <h2><?= htmlspecialchars($product['ProductName']) ?></h2>
       <div class="price">₱<?= number_format($product['Price'], 2) ?></div>
       <div class="sizes" id="sizes">
-        <button class="selected" data-size="EXTRA SMALL" onclick="selectSize(this)">EXTRA SMALL</button>
-        <button data-size="SMALL" onclick="selectSize(this)">SMALL</button>
-        <button data-size="MEDIUM" onclick="selectSize(this)">MEDIUM</button>
-        <button data-size="LARGE" onclick="selectSize(this)">LARGE</button>
-        <button data-size="EXTRA LARGE" onclick="selectSize(this)">EXTRA LARGE</button>
+        <?php foreach ($stockBySize as $size => $stock): ?>
+            <button 
+                data-size="<?= htmlspecialchars($size) ?>" 
+                data-stock="<?= htmlspecialchars($stock) ?>" 
+                onclick="selectSize(this)" 
+                <?= $size === 'EXTRA SMALL' ? 'class="selected"' : '' ?>>
+                <?= htmlspecialchars($size) ?>
+            </button>
+        <?php endforeach; ?>
       </div>
       <div class="quantity">
-        <button onclick="changeQuantity(-1)">-</button>
+        <button type="button" onclick="changeQuantity(-1)">-</button>
         <span id="quantityValue">1</span>
-        <button onclick="changeQuantity(1)">+</button>
+        <button type="button" onclick="changeQuantity(1)">+</button>
+        <span class="stock-info" id="stockInfo">
+            Stock: <?= htmlspecialchars($currentStock) ?>
+        </span>
+        <input type="hidden" name="quantity" id="quantity" value="1">
       </div>
       <form id="addToCartForm" action="add_to_cart.php" method="post" style="margin-top: 20px;">
         <input type="hidden" name="productID" value="<?= htmlspecialchars($product['productID']) ?>">
@@ -132,59 +166,40 @@ if (!$product) {
   </footer>
 
   <script>
-    function changeQuantity(delta) {
-      const quantityElem = document.getElementById('quantityValue');
-      const quantityInput = document.getElementById('quantity');
-      let current = parseInt(quantityElem.innerText);
-      if (current + delta >= 1) {
-        const newQuantity = current + delta;
+function selectSize(button) {
+    const allButtons = document.querySelectorAll('#sizes button');
+    allButtons.forEach(btn => btn.classList.remove('selected'));
+    button.classList.add('selected');
+    
+    // Update hidden input with selected size
+    const selectedSize = button.getAttribute('data-size');
+    const stockLevel = button.getAttribute('data-stock');
+    document.getElementById('selectedSize').value = selectedSize;
+    
+    // Update stock display
+    document.getElementById('stockInfo').textContent = `Stock: ${stockLevel}`;
+    
+    // Reset quantity to 1
+    document.getElementById('quantityValue').textContent = '1';
+    document.getElementById('quantity').value = '1';
+}
+
+function changeQuantity(delta) {
+    const quantityElem = document.getElementById('quantityValue');
+    const quantityInput = document.getElementById('quantity');
+    const selectedButton = document.querySelector('#sizes button.selected');
+    const maxStock = parseInt(selectedButton.getAttribute('data-stock'));
+    let current = parseInt(quantityElem.innerText);
+    
+    // Calculate new quantity
+    let newQuantity = current + delta;
+    
+    // Ensure quantity is between 1 and available stock
+    if (newQuantity >= 1 && newQuantity <= maxStock) {
         quantityElem.innerText = newQuantity;
         quantityInput.value = newQuantity;
-      }
     }
-    
-    function selectSize(button) {
-      const allButtons = document.querySelectorAll('#sizes button');
-      allButtons.forEach(btn => btn.classList.remove('selected'));
-      button.classList.add('selected');
-      
-      // Update hidden input with selected size
-      const selectedSize = button.getAttribute('data-size');
-      document.getElementById('selectedSize').value = selectedSize;
-    }
-    
-    document.getElementById('addToCartForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      var form = this;
-      var formData = new FormData(form);
-      
-      // Debug: log the form data
-      console.log('Form data being sent:');
-      for (let [key, value] of formData.entries()) {
-        console.log(key, value);
-      }
-      
-      fetch('add_to_cart.php', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => response.text())
-      .then(data => {
-        console.log('Server response:', data);
-        if (data.includes('successfully')) {
-          document.getElementById('cartPopup').style.display = 'block';
-          setTimeout(() => {
-            document.getElementById('cartPopup').style.display = 'none';
-          }, 1200);
-        } else {
-          alert('Error: ' + data);
-        }
-      })
-      .catch(error => {
-        console.error('Fetch error:', error);
-        alert('Failed to add to cart.');
-      });
-    });
+}
   </script>
 </body>
 </html>

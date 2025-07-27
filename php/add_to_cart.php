@@ -9,13 +9,14 @@ require_once 'db_connect.php';
 $userID = $_SESSION['userID'];
 $productID = $_POST['productID'];
 $quantity = (int)$_POST['Quantity']; // Force quantity to be integer
+$size = $_POST['size'];
 
 $conn->autocommit(FALSE); // Begin transaction
 
 try {
     // Check product stock first
-    $stmt = $conn->prepare("CALL check_product_stock(?, @available, @product_name)");
-    $stmt->bind_param("s", $productID);
+    $stmt = $conn->prepare("CALL check_product_stock(?, ?, @available, @product_name)");
+    $stmt->bind_param("ss", $productID, $size);
     $stmt->execute();
     $stmt->close();
     
@@ -23,8 +24,8 @@ try {
     $stock = $result->fetch_assoc();
     $conn->next_result();
     
-    if ($stock['available'] < $quantity) {
-        throw new Exception("Not enough stock available for " . $stock['name']);
+    if (!$stock['available'] || $stock['available'] < $quantity) {
+        throw new Exception("Not enough stock available for " . ($stock['name'] ?? 'this product'));
     }
     
     // Get or create active cart

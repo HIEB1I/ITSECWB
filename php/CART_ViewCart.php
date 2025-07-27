@@ -2,6 +2,38 @@
 session_start();
 require_once 'db_connect.php';
 
+// Define currency symbols early
+$currencySymbols = [
+    'PHP' => '₱',
+    'USD' => '$',
+    'KRW' => '₩'
+];
+
+// Get cart info first
+$stmt = $conn->prepare("SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE");
+$stmt->bind_param("s", $userID);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Set default currency if none selected
+$selectedCurrency = 'PHP';
+$currencySymbol = $currencySymbols[$selectedCurrency];
+
+// Then get cart details with currency info
+if ($result->num_rows > 0) {
+    $cartID = $result->fetch_assoc()['cartID'];
+    $getCart = $conn->prepare("SELECT Total, Currency, MOP FROM CART WHERE cartID = ?");
+    $getCart->bind_param("s", $cartID);
+    $getCart->execute();
+    $cartInfo = $getCart->get_result()->fetch_assoc();
+    $getCart->close();
+
+    // Update selected currency from cart info
+    $selectedCurrency = $cartInfo['Currency'] ?? 'PHP';
+    $currencySymbol = $currencySymbols[$selectedCurrency] ?? '₱';
+    $total = $cartInfo['Total'] ?? 0;
+}
+
 // Add this function to handle image display
 function getImageTag($imageData, $altText) {
     if ($imageData) {
@@ -384,7 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
         </select>
     </div>
     <div class="total">
-        ESTIMATED TOTAL: <?= $currencySymbols[$selectedCurrency] ?><?= number_format($total, 2) ?>
+        ESTIMATED TOTAL: 
+        <?= isset($currencySymbols[$selectedCurrency]) ? $currencySymbols[$selectedCurrency] : '₱' ?>
+        <?= number_format($total ?? 0, 2) ?>
     </div>
     <div class="checkout">
         <form action="CART_PlaceOrder.php" method="POST">
