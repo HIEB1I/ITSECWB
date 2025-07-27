@@ -399,6 +399,7 @@ DELIMITER ;
 DELIMITER //
 CREATE PROCEDURE check_product_stock(
     IN p_productID VARCHAR(10),
+    IN p_size VARCHAR(20),
     OUT p_available INT,
     OUT p_product_name VARCHAR(200)
 )
@@ -406,7 +407,7 @@ BEGIN
     SELECT QuantityAvail, ProductName 
     INTO p_available, p_product_name
     FROM PRODUCT 
-    WHERE productID = p_productID;
+    WHERE productID = p_productID AND Size = p_size;
 END //
 DELIMITER ;
 

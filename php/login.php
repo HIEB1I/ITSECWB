@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $row = $result->fetch_assoc();
 
             // Use password_verify() to check if the entered password matches the hashed password
-           // if ($password === $row['Password']) {
-            if (password_verify($password, $row['Password'])) {
+            if ($password === $row['Password']) {
+            //if (password_verify($password, $row['Password'])) {
                 // The password is correct
                 $_SESSION['userID'] = $row['userID'];
                 $_SESSION['role'] = $row['Role'];
