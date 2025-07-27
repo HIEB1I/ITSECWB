@@ -112,26 +112,39 @@ $stmt->bind_result($firstName, $lastName, $email, $address);
 $stmt->fetch();
 $stmt->close();
 
-// Fetch order history for current user
-$orderSQL = "
-    SELECT 
-        C.cartID,
-        C.Total,
-        C.Currency,
-        C.MOP,
-        C.Status,
-        C.Order_Date,
-        C.ref_userID
-    FROM CART C
-    WHERE C.ref_userID = ? AND C.Purchased = 1
-    ORDER BY C.Order_Date DESC
-";
-
-$orderStmt = $conn->prepare($orderSQL);
-$orderStmt->bind_param('s', $userID);
-$orderStmt->execute();
-$orderHistory = $orderStmt->get_result();
-$orderStmt->close();
+// Get user's order history - Fixed to use proper variable name and error handling
+$orders = array();
+try {
+    $stmt = $conn->prepare("CALL get_user_orders(?)");
+    if ($stmt) {
+        $stmt->bind_param("s", $_SESSION['userID']);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            if ($result) {
+                $orders = $result->fetch_all(MYSQLI_ASSOC);
+            }
+        }
+        $stmt->close();
+    }
+} catch (Exception $e) {
+    // If stored procedure fails, try direct query as fallback
+    $stmt = $conn->prepare("
+        SELECT c.cartID, c.Total, c.Currency, c.Status, c.Order_Date 
+        FROM CART c 
+        WHERE c.ref_userID = ? AND c.Status IS NOT NULL 
+        ORDER BY c.Order_Date DESC
+    ");
+    if ($stmt) {
+        $stmt->bind_param("s", $_SESSION['userID']);
+        if ($stmt->execute()) {
+            $result = $stmt->get_result();
+            if ($result) {
+                $orders = $result->fetch_all(MYSQLI_ASSOC);
+            }
+        }
+        $stmt->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -339,7 +352,7 @@ $orderStmt->close();
             <div class="account-content">
                 <div class="order-history">
                     <h3 style="text-align:center; margin-bottom: 40px;">ORDER HISTORY</h3>
-                    <?php if ($orderHistory->num_rows === 0): ?>
+                    <?php if (empty($orders)): ?>
                         <p style="text-align: center; padding: 40px 0; color: #888;">
                             You haven't placed any orders yet.
                         </p>
@@ -355,7 +368,7 @@ $orderStmt->close();
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php while ($order = $orderHistory->fetch_assoc()): 
+                                <?php foreach ($orders as $order): 
                                     // Get currency symbol
                                     $symbol = match ($order['Currency']) {
                                         'PHP' => '₱',
@@ -410,7 +423,7 @@ $orderStmt->close();
                                             <?= date('M d, Y', strtotime($order['Order_Date'])) ?>
                                         </td>
                                     </tr>
-                                <?php endwhile; ?>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     <?php endif; ?>

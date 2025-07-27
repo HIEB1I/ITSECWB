@@ -21,6 +21,17 @@ if (!isset($_SESSION['userID'])) {
     exit();
 }
 
+// When user needs a new cart
+if (!isset($_SESSION['cartID'])) {
+    $stmt = $conn->prepare("CALL create_new_cart(?)");
+    $stmt->bind_param("s", $_SESSION['userID']);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $cart = $result->fetch_assoc();
+    $_SESSION['cartID'] = $cart['new_cartID'];
+    $stmt->close();
+}
+
 // Query to fetch products for all categories
 //$sql = "SELECT * FROM PRODUCT";
 //$result = $conn->query($sql);

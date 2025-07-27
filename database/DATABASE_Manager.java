@@ -260,11 +260,117 @@ CREATE USER 'admin_user'@'localhost';
 GRANT ALL PRIVILEGES ON dbadm.* TO 'admin_user'@'localhost';
 FLUSH PRIVILEGES;
 
+CREATE TABLE currencies (
+code VARCHAR(5) PRIMARY KEY,
+symbol VARCHAR(5),
+exchange_rate_to_php DECIMAL(10, 4) DEFAULT 1.0000,
+updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 
+-- create order
+DELIMITER //
+CREATE PROCEDURE create_new_cart(IN p_userID VARCHAR(10))
+BEGIN
+    DECLARE new_cartID VARCHAR(10);
+    
+    -- Generate new cart ID
+    SELECT CONCAT('C', LPAD(IFNULL(MAX(SUBSTRING(cartID, 2)) + 1, 1), 5, '0'))
+    INTO new_cartID
+    FROM CART;
+    
+    -- Create new cart
+    INSERT INTO CART (cartID, Total, Purchased, ref_userID)
+    VALUES (new_cartID, 0, FALSE, p_userID);
+    
+    SELECT new_cartID;
+END //
+DELIMITER ;
 
+-- add product procedure
 
+DELIMITER //
+CREATE PROCEDURE add_new_product(
+    IN p_name VARCHAR(200),
+    IN p_size ENUM('Extra-Small', 'Small', 'Medium', 'Large', 'Extra-Large'),
+    IN p_category ENUM('TEES', 'BOTTOMS', 'LAYERING'),
+    IN p_description VARCHAR(500),
+    IN p_quantity INT,
+    IN p_price DOUBLE
+)
+BEGIN
+    DECLARE new_productID VARCHAR(10);
+    
+    -- Generate new product ID
+    SELECT CONCAT('P', LPAD(IFNULL(MAX(SUBSTRING(productID, 2)) + 1, 1), 5, '0'))
+    INTO new_productID
+    FROM PRODUCT;
+    
+    INSERT INTO PRODUCT (
+        productID, ProductName, Size, Category, 
+        Description, QuantityAvail, Price
+    ) VALUES (
+        new_productID, p_name, p_size, p_category,
+        p_description, p_quantity, p_price
+    );
+    
+    SELECT new_productID;
+END //
+DELIMITER ;
 
+DELIMITER //
+CREATE PROCEDURE get_user_orders(IN p_userID VARCHAR(10))
+BEGIN
+    SELECT 
+        C.cartID,
+        C.Total,
+        C.Currency,
+        C.MOP,
+        C.Status,
+        C.Order_Date,
+        C.Ship_By_Date,
+        GROUP_CONCAT(
+            CONCAT(P.ProductName, ' (', CI.QuantityOrdered, ')') 
+            SEPARATOR '; '
+        ) as Products
+    FROM CART C
+    LEFT JOIN CART_ITEMS CI ON C.cartID = CI.ref_cartID
+    LEFT JOIN PRODUCT P ON CI.ref_productID = P.productID
+    WHERE C.ref_userID = p_userID AND C.Purchased = TRUE
+    GROUP BY C.cartID
+    ORDER BY C.Order_Date DESC;
+END //
+DELIMITER ;
 
+DELIMITER //
+CREATE PROCEDURE update_cart_total(IN p_cartID VARCHAR(10))
+BEGIN
+    UPDATE CART C
+    SET C.Total = (
+        SELECT COALESCE(SUM(P.Price * CI.QuantityOrdered), 0)
+        FROM CART_ITEMS CI
+        JOIN PRODUCT P ON CI.ref_productID = P.productID
+        WHERE CI.ref_cartID = p_cartID
+    )
+    WHERE C.cartID = p_cartID;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE check_product_stock(
+    IN p_productID VARCHAR(10),
+    OUT p_available INT,
+    OUT p_product_name VARCHAR(200)
+)
+BEGIN
+    SELECT QuantityAvail, ProductName 
+    INTO p_available, p_product_name
+    FROM PRODUCT 
+    WHERE productID = p_productID;
+END //
+DELIMITER ;
+
+GRANT EXECUTE ON PROCEDURE dbadm.get_user_orders TO 'customer_user'@'localhost';
+GRANT EXECUTE ON dbadm.* TO 'customer_user'@'localhost';
 
 */

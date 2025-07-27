@@ -15,9 +15,14 @@ if (!isset($_POST['cartItemsID']) || empty($_POST['cartItemsID'])) {
 
 $cartItemID = $_POST['cartItemsID'];
 
-// Fetch current quantity
-$stmt = $conn->prepare("SELECT QuantityOrdered FROM CART_ITEMS WHERE cartItemsID = ? AND ref_cartID IN (SELECT cartID FROM CART WHERE ref_userID = ? AND Purchased = FALSE)");
-$stmt->bind_param("si", $cartItemID, $userID);
+// Fetch current quantity AND cartID
+$stmt = $conn->prepare("
+    SELECT CI.QuantityOrdered, CI.ref_cartID 
+    FROM CART_ITEMS CI 
+    JOIN CART C ON CI.ref_cartID = C.cartID 
+    WHERE CI.cartItemsID = ? AND C.ref_userID = ? AND C.Purchased = FALSE
+");
+$stmt->bind_param("ss", $cartItemID, $userID);
 $stmt->execute();
 $result = $stmt->get_result();
 if ($result->num_rows === 0) {
@@ -25,6 +30,7 @@ if ($result->num_rows === 0) {
 }
 $currentRow = $result->fetch_assoc();
 $currentQty = (int)$currentRow['QuantityOrdered'];
+$cartID = $currentRow['ref_cartID']; // Get the cartID for later use
 $stmt->close();
 
 // Determine action
@@ -54,6 +60,12 @@ if (isset($_POST['delete'])) {
     // Optional: add logic to confirm final value, or redirect without change
     // For now, do nothing extra unless you add a visible input for new quantity
 }
+
+// After updating cart items - now $cartID is properly defined
+$stmt = $conn->prepare("CALL update_cart_total(?)");
+$stmt->bind_param("s", $cartID);
+$stmt->execute();
+$stmt->close();
 
 $conn->close();
 
