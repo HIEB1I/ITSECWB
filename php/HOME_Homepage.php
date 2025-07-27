@@ -21,6 +21,9 @@ if (!isset($_SESSION['userID'])) {
     exit();
 }
 
+$role = $_SESSION['role'] ?? '';
+
+
 // When user needs a new cart
 if (!isset($_SESSION['cartID'])) {
     // Generate new cart ID
@@ -236,6 +239,21 @@ $conn->close();
   <a href="CATEGORY_Bottoms.php">BOTTOMS</a>
   <a href="CATEGORY_Layering.php">LAYERING</a>
 </nav>
+
+<?php if (in_array($role, ['Admin', 'Staff'])): ?>
+  <div style="display: flex; justify-content: center; margin: 20px;">
+    <a href="ADMIN_Dashboard.php" style="
+      padding: 10px 20px;
+      background-color: #0C619B;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-size: 14px;
+    ">
+      Admin Dashboard
+    </a>
+  </div>
+<?php endif; ?>
 
 <!-- CATEGORY SECTIONS -->
 

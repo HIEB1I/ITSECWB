@@ -208,13 +208,13 @@ require_once 'db_connect.php';
     <h4>DASHBOARD</h4>
     <a href="ADMIN_Dashboard.php">Product</a>
     <a href="ADMIN_Orders.php" class="active">Order</a>
-    <a href="view_products.php">Browse</a>
+    <a href="HOME_Homepage.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php">Manage Users</a>
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>
-    <a href="../html/login.html">Log Out</a>
+    <a href="../php/login.php">Log Out</a>
   </div>
 </div>
 

@@ -22,7 +22,6 @@ if (isset($_SESSION['role'])) {
 
 // Connect to the database
 $conn = new mysqli($host, $db_user, "", $dbname); 
-// echo "Connected as: $db_user<br>";
 
 // Check connection
 if ($conn->connect_error) {

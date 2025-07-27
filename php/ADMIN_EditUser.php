@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $firstName = $_POST['firstName'];
   $lastName = $_POST['lastName'];
   $email = $_POST['email'];
- $password = password_hash($_POST['Password'], PASSWORD_DEFAULT); 
+ $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
   $role = $_POST['role'];
   $joined = $_POST['joined'];
 
@@ -102,7 +102,7 @@ if (!$user) {
   <div class="main-content">
     <header>
       <div class="logo">
-        <img src="Logos/KW Logo.png" alt="KALYE WEST">
+        <img src="../Logos/KW Logo.png" alt="KALYE WEST">
       </div>
     </header>
 

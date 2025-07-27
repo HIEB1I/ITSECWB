@@ -107,7 +107,7 @@ $imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($pr
 <div class="main-content">
   <header>
     <div class="logo">
-      <img src="Logos/KW Logo.png" alt="KALYE WEST">
+      <img src="../Logos/KW Logo.png" alt="KALYE WEST">
     </div>
   </header>
 

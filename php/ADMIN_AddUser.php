@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
     $email = $_POST['email'];
-    $password = password_hash($_POST['Password'], PASSWORD_DEFAULT); 
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
     $role = $_POST['role'];
     $address = $_POST['address'];
     $createdAt = $_POST['joined'];
@@ -261,7 +261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h4>DASHBOARD</h4>
     <a href="ADMIN_Dashboard.php">Product</a>
     <a href="ADMIN_Orders.php">Order</a>
-   <a href="view_products.php">Browse</a>
+   <a href="HOME_Homepage.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php" class="active">Manage Users</a>
   </div>
