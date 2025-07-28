@@ -20,12 +20,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $firstName = $_POST['firstName'];
   $lastName = $_POST['lastName'];
   $email = $_POST['email'];
- $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
+  $address = $_POST['address'];
+  $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
   $role = $_POST['role'];
   $joined = $_POST['joined'];
 
-  $stmt = $conn->prepare("UPDATE USERS SET FirstName=?, LastName=?, Email=?, Password=?, Role=?, Created_At=? WHERE userID=?");
-  $stmt->bind_param("sssssss", $firstName, $lastName, $email, $password, $role, $joined, $userID);
+  $stmt = $conn->prepare("UPDATE USERS SET FirstName=?, LastName=?, Email=?, Address=?, Password=?, Role=?, Created_At=? WHERE userID=?");
+  $stmt->bind_param("ssssssss", $firstName, $lastName, $email, $address, $password, $role, $joined, $userID);
 
   if ($stmt->execute()) {
     header("Location: ADMIN_ManageUsers.php");
@@ -123,6 +124,9 @@ if (!$user) {
 
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['Email']) ?>" required>
+
+        <label for="address">Address:</label>
+        <input type="text" id="address" name="address" value="<?= htmlspecialchars($user['Address']) ?>" required>
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" value="<?= htmlspecialchars($user['Password']) ?>" required>
