@@ -132,19 +132,16 @@ foreach ($sizeStocks as $item) {
         <?php endforeach; ?>
       </div>
       <div class="quantity">
-        <button type="button" onclick="changeQuantity(-1)">-</button>
-        <span id="quantityValue">1</span>
-        <button type="button" onclick="changeQuantity(1)">+</button>
         <span class="stock-info" id="stockInfo">
             Stock: <?= htmlspecialchars($currentStock) ?>
         </span>
-        <input type="hidden" name="quantity" id="quantity" value="1">
       </div>
+
       <form id="addToCartForm" action="add_to_cart.php" method="post" style="margin-top: 20px;">
         <input type="hidden" name="productID" value="<?= htmlspecialchars($product['productID']) ?>">
         <input type="hidden" id="selectedSize" name="size" value="EXTRA SMALL">
         <label for="quantity">Quantity:</label>
-        <input type="number" id="quantity" name="Quantity" value="1" min="1" required style="width: 60px;">
+        <input type="number" id="quantity" name="Quantity" value="1" min="1" max="<?= htmlspecialchars($currentStock) ?>" required style="width: 60px;">
         <button type="submit" class="add-to-cart">Add to cart</button>
       </form>
       <div id="cartPopup" style="display:none;position:fixed;top:30px;left:50%;transform:translateX(-50%);background:#0C619B;color:#fff;padding:16px 32px;border-radius:8px;z-index:9999;font-size:18px;">Product added to cart!</div>
@@ -179,27 +176,9 @@ function selectSize(button) {
     // Update stock display
     document.getElementById('stockInfo').textContent = `Stock: ${stockLevel}`;
     
-    // Reset quantity to 1
-    document.getElementById('quantityValue').textContent = '1';
-    document.getElementById('quantity').value = '1';
+    // Update quantity max attribute
+    document.getElementById('quantity').max = stockLevel;
 }
-
-function changeQuantity(delta) {
-    const quantityElem = document.getElementById('quantityValue');
-    const quantityInput = document.getElementById('quantity');
-    const selectedButton = document.querySelector('#sizes button.selected');
-    const maxStock = parseInt(selectedButton.getAttribute('data-stock'));
-    let current = parseInt(quantityElem.innerText);
-    
-    // Calculate new quantity
-    let newQuantity = current + delta;
-    
-    // Ensure quantity is between 1 and available stock
-    if (newQuantity >= 1 && newQuantity <= maxStock) {
-        quantityElem.innerText = newQuantity;
-        quantityInput.value = newQuantity;
-    }
-}
-  </script>
+</script>
 </body>
 </html>
