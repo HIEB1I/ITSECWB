@@ -23,8 +23,13 @@ if (isset($_SESSION['role'])) {
         default:
             exit("Access denied."); // (REQ #2)
     }
-} else {
-    exit("Access denied."); // (REQ #1 + #2)
+} else { 
+     // Allow public access only to register.php
+    if (basename($_SERVER['PHP_SELF']) === 'register.php') {
+        $db_user = "public_user"; // Use a low-privilege user for registration
+    } else {
+        exit("Access denied."); // (REQ #2)
+    }
 }
 
 $conn = new mysqli($host, $db_user, "", $dbname);

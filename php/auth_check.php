@@ -14,7 +14,8 @@ function requireLogin() {
 function requireRole(array $roles) {
     requireLogin();
     if (!in_array($_SESSION['role'], $roles)) {
-        exit("Access denied.");
+        header("Location: login.php"); // fails securely
+        exit();
     }
 }
 ?>

@@ -1,6 +1,5 @@
 <?php
-session_start();
-require_once 'db_connect.php'; 
+require_once 'db_connect.php';
 
 // Auto-generate userID
 $sql = "SELECT userID FROM USERS ORDER BY userID DESC LIMIT 1";
@@ -20,8 +19,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $lastName  = trim($_POST['lastName']);
     $email     = trim($_POST['email']);
     
-    // (REQ #3) Store strong salted hash using password_hash (built-in salt)
-    $password  = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    
+    // Enforce password complexity & length
+    $passwordPlain = $_POST['password'] ?? '';
+    $minLength = 8;
+
+    if (
+        strlen($passwordPlain) < $minLength ||
+        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
+        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
+        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
+        !preg_match('/[\W]/', $passwordPlain)      // Special char
+    ) {
+        die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
+    }
+    // Store strong salted hash using password_hash (built-in salt)
+    // Hash the password (bcrypt with salt automatically handled)
+    $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
+
 
     $role = 'Customer';
 

@@ -291,9 +291,20 @@ require_once 'db_connect.php';
               <td>{$row['Status']}</td>
               <td>{$row['Order_Date']}</td>
               <td>" . ($row['Ship_By_Date'] ?? '—') . "</td>
-              <td class='actions'>
-                <a href='ADMIN_EditOrder.php?cartID={$cartID}'><i class='fa-solid fa-pen-to-square'></i></a>
-              </td>
+             <td class='actions'>";
+
+              // Check role and status
+              if (
+                  $_SESSION['role'] === 'Admin' || 
+                  strtolower($row['Status']) !== 'delivered'
+              ) {
+                  // Admins can always edit, Staff can edit only if not delivered
+                  echo "<a href='ADMIN_EditOrder.php?cartID={$cartID}'><i class='fa-solid fa-pen-to-square'></i></a>";
+              } else {
+                  echo "<i class='fa-solid fa-ban' title='Editing disabled for delivered orders' style='color: gray;'></i>";
+              }
+
+              echo "</td>
             </tr>";
           }
         } else {

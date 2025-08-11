@@ -10,8 +10,11 @@ CREATE TABLE IF NOT EXISTS USERS (
   Email VARCHAR(200),
   Address VARCHAR(500),
   Role ENUM('Customer', 'Staff', 'Admin') NOT NULL,
-  Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FailedAttempts INT DEFAULT 0,
+  LockoutUntil DATETIME NULL
 );
+
 
 
 CREATE TABLE IF NOT EXISTS PRODUCT (
@@ -358,7 +361,26 @@ GRANT SELECT ON dbadm.PRODUCT_EDIT_AUDIT TO 'staff_user'@'localhost';
 GRANT SELECT ON dbadm.USERS TO 'staff_user'@'localhost';
 GRANT SELECT ON dbadm.currencies TO 'staff_user'@'localhost';
 
+-- Basic usage (ensures the account exists)
+GRANT USAGE ON *.* TO 'staff_user'@'localhost';
 
+-- PRODUCT: Read + column-specific update + references
+GRANT SELECT, INSERT, UPDATE (QuantityAvail), REFERENCES ON dbadm.PRODUCT TO 'staff_user'@'localhost';
+
+-- USERS: Read + update
+GRANT SELECT, UPDATE ON dbadm.USERS TO 'staff_user'@'localhost';
+
+-- Read-only tables
+GRANT SELECT ON dbadm.cart_audit TO 'staff_user'@'localhost';
+GRANT SELECT ON dbadm.cart_items_audit TO 'staff_user'@'localhost';
+GRANT SELECT ON dbadm.currencies TO 'staff_user'@'localhost';
+
+-- Stored procedures
+GRANT EXECUTE ON PROCEDURE dbadm.check_product_stock TO 'staff_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.get_user_orders TO 'staff_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.update_cart_total TO 'staff_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.get_customer_summary TO 'staff_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.convert_cart_currency TO 'staff_user'@'localhost';
 
 
 CREATE USER 'customer_user'@'localhost';

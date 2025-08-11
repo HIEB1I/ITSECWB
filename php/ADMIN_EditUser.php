@@ -19,7 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $lastName = $_POST['lastName'];
   $email = $_POST['email'];
   $address = $_POST['address'];
-  $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
+     // Enforce password complexity & length
+    $passwordPlain = $_POST['password'] ?? '';
+    $minLength = 8;
+
+    if (
+        strlen($passwordPlain) < $minLength ||
+        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
+        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
+        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
+        !preg_match('/[\W]/', $passwordPlain)      // Special char
+    ) {
+        die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
+    }
+    // Store strong salted hash using password_hash (built-in salt)
+    // Hash the password (bcrypt with salt automatically handled)
+    $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
   $role = $_POST['role'];
   $joined = $_POST['joined'];
 

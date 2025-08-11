@@ -1,66 +1,106 @@
 <?php
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // DB connection
-    $conn = new mysqli("localhost", "root", "", "dbadm");
-    if ($conn->connect_error) {
-        error_log("DB Connection failed: " . $conn->connect_error);
-        exit("Service unavailable."); // Fail securely
-    }
+// default message container and prefill
+$error_message = '';
+$email_prefill = '';
 
-    $email    = trim($_POST['email'] ?? '');
+// POST handler
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Get inputs (trim email)
+    $email_prefill = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    if (empty($email) || empty($password)) {
+    // Basic required-field check (visible error)
+    if ($email_prefill === '' || $password === '') {
         $error_message = "❌ Please fill in both email and password.";
     } else {
-        $stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
-        $stmt->bind_param("s", $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
+        // Connect to DB (use proper credentials)
+        $conn = new mysqli("localhost", "root", "", "dbadm");
+        if ($conn->connect_error) {
+            error_log("DB Connection failed: " . $conn->connect_error);
+            // fail securely
+            $error_message = "Service temporarily unavailable. Please try again later.";
+        } else {
 
-        $login_success = false;
+            // 1) Attempt to look up the user by email (we'll use the returned fields if user exists)
+            $stmt = $conn->prepare("
+                SELECT userID, Password, Role, FailedAttempts, LockoutUntil
+                FROM USERS
+                WHERE Email = ?
+            ");
+            $stmt->bind_param("s", $email_prefill);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $user = $result->fetch_assoc(); // null if not found
+            $stmt->close();
 
-        if ($result->num_rows === 1) {
-            $user = $result->fetch_assoc();
+            // Initialize these so they exist in all code paths
+            $failedAttempts = 0;
+            $lockoutUntil = null;
 
-            //if ($password === $user['Password']) {
-            if (password_verify($password, $user['Password'])) {
-                $login_success = true;
-
-                $_SESSION['userID'] = $user['userID'];
-                $_SESSION['role']   = $user['Role'];
-
-                // Role-based redirection
-                switch ($user['Role']) {
-                    case 'Admin':
-                        header("Location: ADMIN_Dashboard.php");
-                        break;
-                    case 'Staff':
-                        header("Location: ADMIN_Dashboard.php");
-                        break;
-                    case 'Customer':
-                        header("Location: HOME_Homepage.php");
-                        break;
-                    default:
-                        exit("Access denied.");
-                }
-                exit();
+            if ($user) {
+                $failedAttempts = (int)$user['FailedAttempts'];
+                $lockoutUntil = $user['LockoutUntil'];
             }
+
+            // 2) Check lockout (if user exists). If locked, show generic locked message.
+            if ($user && $lockoutUntil && strtotime($lockoutUntil) > time()) {
+                $error_message = "❌ Account locked due to multiple failed login attempts. Try again later.";
+            } else {
+                // 3) If user found, verify password
+                $login_success = false;
+                if ($user && password_verify($password, $user['Password'])) {
+                    // Success: reset FailedAttempts and LockoutUntil, set session and redirect by role
+                    $reset = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL WHERE Email = ?");
+                    $reset->bind_param("s", $email_prefill);
+                    $reset->execute();
+                    $reset->close();
+
+                    // Set session
+                    $_SESSION['userID'] = $user['userID'];
+                    $_SESSION['role']   = $user['Role'];
+
+                    // Role-based redirect (Admin/Staff -> admin area, Customer -> home)
+                    if ($user['Role'] === 'Admin' || $user['Role'] === 'Staff') {
+                        header("Location: ADMIN_Dashboard.php");
+                        exit();
+                    } else {
+                        header("Location: HOME_Homepage.php");
+                        exit();
+                    }
+                } else {
+                    // 4) Failed login: increment FailedAttempts only if user exists
+                    if ($user) {
+                        $newAttempts = $failedAttempts + 1;
+                        if ($newAttempts >= 5) {
+                            // lock for 1 minute
+                            $newLockout = date("Y-m-d H:i:s", time() + 1 * 60);
+                            $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LockoutUntil = ? WHERE Email = ?");
+                            $upd->bind_param("iss", $newAttempts, $newLockout, $email_prefill);
+                        } else {
+                            $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ? WHERE Email = ?");
+                            $upd->bind_param("is", $newAttempts, $email_prefill);
+                        }
+                        $upd->execute();
+                        $upd->close();
+                    } else {
+                        // If no such user, do a dummy password_verify to help avoid timing attacks
+                        // (makes the response time more consistent so attackers can't easily probe existence)
+                        password_verify($password, password_hash("fake-password", PASSWORD_DEFAULT));
+                    }
+
+                    // Generic error message (Requirement #4)
+                    $error_message = "❌ Invalid username and/or password.";
+                }
+            } // end else not locked
+
+            $conn->close();
         }
-
-        // Requirement #4: Generic message for any failure
-        if (!$login_success) {
-            $error_message = "❌ Invalid username and/or password.";
-        }
-
-        $stmt->close();
-    }
-
-    $conn->close();
-}
+    } 
+} 
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
