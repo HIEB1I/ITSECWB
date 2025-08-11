@@ -1,11 +1,9 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['userID'])) {
-    exit("Access denied.");
-}
-
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
 require_once 'db_connect.php';
+
 
 $userID = $_SESSION['userID'];
 $conn->autocommit(FALSE); // Manual commit/rollback

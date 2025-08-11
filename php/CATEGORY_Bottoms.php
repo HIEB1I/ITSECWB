@@ -1,4 +1,10 @@
 <?php
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
+require_once 'db_connect.php';
+
+
 function getImageTag($imageData, $alt = '', $class = 'product-img') {
     if ($imageData) {
         $imgData = base64_encode($imageData);
@@ -6,7 +12,7 @@ function getImageTag($imageData, $alt = '', $class = 'product-img') {
     }
     return '';
 }
-session_start();
+
 
 // Database credentials
 $host = "localhost";

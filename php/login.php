@@ -1,55 +1,63 @@
 <?php
 session_start();
 
-// Check if the form is submitted
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Connect to database
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // DB connection
     $conn = new mysqli("localhost", "root", "", "dbadm");
     if ($conn->connect_error) {
-        die("Connection failed: " . $conn->connect_error);
+        error_log("DB Connection failed: " . $conn->connect_error);
+        exit("Service unavailable."); // Fail securely
     }
 
-    // Sanitize and validate input
-    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-    $password = isset($_POST['password']) ? trim($_POST['password']) : '';
+    $email    = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
 
-    // Check if the form fields are not empty
     if (empty($email) || empty($password)) {
-        $error_message = "❌ Please fill in both the email and password.";
+        $error_message = "❌ Please fill in both email and password.";
     } else {
-        // Fetch user data
         $stmt = $conn->prepare("SELECT userID, Password, Role FROM USERS WHERE Email = ?");
         $stmt->bind_param("s", $email);
         $stmt->execute();
         $result = $stmt->get_result();
 
-        // Check if the user exists
-        if ($result->num_rows === 1) {
-            $row = $result->fetch_assoc();
+        $login_success = false;
 
-            // Use password_verify() to check if the entered password matches the hashed password
-            //if ($password === $row['Password']) {
-            if (password_verify($password, $row['Password'])) {
-                // The password is correct
-                $_SESSION['userID'] = $row['userID'];
-                $_SESSION['role'] = $row['Role'];
+        if ($result->num_rows === 1) {
+            $user = $result->fetch_assoc();
+
+            //if ($password === $user['Password']) {
+            if (password_verify($password, $user['Password'])) {
+                $login_success = true;
+
+                $_SESSION['userID'] = $user['userID'];
+                $_SESSION['role']   = $user['Role'];
 
                 // Role-based redirection
-                if ($row['Role'] === 'Admin') {
-                    header("Location: ADMIN_Dashboard.php");
-                } else {
-                    header("Location: HOME_Homepage.php");
+                switch ($user['Role']) {
+                    case 'Admin':
+                        header("Location: ADMIN_Dashboard.php");
+                        break;
+                    case 'Staff':
+                        header("Location: ADMIN_Dashboard.php");
+                        break;
+                    case 'Customer':
+                        header("Location: HOME_Homepage.php");
+                        break;
+                    default:
+                        exit("Access denied.");
                 }
                 exit();
-            } else {
-                $error_message = "❌ Incorrect password";
             }
-        } else {
-            $error_message = "❌ Email not found";
         }
+
+        // Requirement #4: Generic message for any failure
+        if (!$login_success) {
+            $error_message = "❌ Invalid username and/or password.";
+        }
+
+        $stmt->close();
     }
 
-    $stmt->close();
     $conn->close();
 }
 ?>

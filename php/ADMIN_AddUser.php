@@ -1,8 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
+require_once 'auth_check.php';
+requireRole(['Admin']); // only admins allowed
 require_once 'db_connect.php';
 
 // Auto-generate next user ID

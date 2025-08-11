@@ -1,9 +1,9 @@
 <?php
-session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-    exit("Access denied.");
-}
+// Admin page access
+require_once 'auth_check.php';
+requireRole(['Admin']); // only admins allowed
 require_once 'db_connect.php';
+
 
 $stmt = $conn->prepare("SELECT userID, FirstName, LastName, Email, Password, Address,  Role, Created_At FROM USERS");
 $stmt->execute();

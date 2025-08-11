@@ -1,11 +1,9 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
-
+// Admin page access
+require_once 'auth_check.php';
+requireRole(['Admin']); // only admins allowed
 require_once 'db_connect.php';
+
 
 $userID = $_GET['userID'] ?? null;
 if (!$userID) {
