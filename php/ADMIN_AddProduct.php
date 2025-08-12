@@ -1,10 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
-
-require_once 'db_connect.php'; 
+// Admin + Staff page access
+require_once 'auth_check.php';
+requireRole(['Admin', 'Staff']); // admins + staff allowed
+require_once 'db_connect.php';
 require_once 'validation.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

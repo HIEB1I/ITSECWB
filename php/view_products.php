@@ -1,14 +1,9 @@
 <?php
-session_start();
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
+require_once 'db_connect.php';
 
-if (!isset($_SESSION['userID'])) {
-  header("Location: login.html");
-  exit();
-}
-
-require_once 'db_connect.php'; 
 
 $userID = $_SESSION['userID'];
 ?>

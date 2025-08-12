@@ -1,17 +1,15 @@
 <?php
-session_start();
-require_once 'db_connect.php';  // Uses session-based user (Admin/Staff only)
+// Admin + Staff page access
+require_once 'auth_check.php';
+requireRole(['Admin', 'Staff']); // admins + staff allowed
+require_once 'db_connect.php';
 
-// Prevent customers from accessing
-if ($_SESSION['role'] !== 'Admin' && $_SESSION['role'] !== 'Staff') {
-    die("<h3>❌ Access denied. You are not allowed to upload products.</h3>");
-}
 
-// ✅ Begin transaction
+// Begin transaction
 $conn->autocommit(FALSE);
 
 try {
-    // 🔹 Generate new productID
+    // Generate new productID
     $sql = "SELECT productID FROM PRODUCT ORDER BY productID DESC LIMIT 1";
     $result = $conn->query($sql);
 
@@ -23,7 +21,7 @@ try {
         $productID = 'P00001';
     }
 
-    // 🔹 Get form data
+    //  Get form data
     $productName = $_POST['ProductName'];
     $size = $_POST['Size'];
     $category = $_POST['Category'];
@@ -31,11 +29,11 @@ try {
     $quantity = $_POST['QuantityAvail'];
     $price = $_POST['Price'];
 
-    // 🔹 Handle image
+    //  Handle image
     $image = $_FILES['Image']['tmp_name'];
     $imageData = file_get_contents($image);
 
-    // 🔹 Prepare and execute insert
+    //  Prepare and execute insert
     $stmt = $conn->prepare("INSERT INTO PRODUCT 
         (productID, ProductName, Size, Category, Description, QuantityAvail, Price, Image) 
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
@@ -51,13 +49,13 @@ try {
         throw new Exception("Execution failed: " . $stmt->error);
     }
 
-    // ✅ Commit if all successful
+    //  Commit if all successful
     $conn->commit();
     header("Location: view_products.php");
     exit();
 
 } catch (Exception $e) {
-    // ❌ Rollback on any failure
+    //  Rollback on any failure
     $conn->rollback();
     echo "<h3>❌ Error: " . $e->getMessage() . "</h3>";
 } finally {

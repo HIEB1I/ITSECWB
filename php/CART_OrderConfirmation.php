@@ -1,5 +1,7 @@
 <?php
-session_start();
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
 require_once 'db_connect.php';
 
 // Redirect if not logged in

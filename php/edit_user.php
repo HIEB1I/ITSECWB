@@ -1,14 +1,9 @@
 <?php
-session_start();
-ini_set('display_errors', 1);
-error_reporting(E_ALL);
-
-// 🔐 Allow only Admin
-if (!isset($_SESSION['userID']) || $_SESSION['role'] !== 'Admin') {
-    exit("⛔ Access denied. Admins only.");
-}
-
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
 require_once 'db_connect.php';
+
 
 $success = "";
 $error = "";

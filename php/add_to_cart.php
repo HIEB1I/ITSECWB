@@ -1,10 +1,9 @@
 <?php
-session_start();
-if (!isset($_SESSION['userID'])) {
-    exit("Access denied.");
-}
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
+require_once 'db_connect.php';
 
-require_once 'db_connect.php'; 
 
 $userID = $_SESSION['userID'];
 $productID = $_POST['productID'];
@@ -75,17 +74,18 @@ try {
     
     // Commit transaction
     $conn->commit();
+    $conn->close();
 
     header('Location: CART_ViewCart.php');
     exit();
 
 } catch (Exception $e) {
     $conn->rollback();
+    $conn->close();
     // Handle error case
     $_SESSION['error'] = $e->getMessage();
     header('Location: ' . $_SERVER['HTTP_REFERER']); 
     exit();
 }
 
-$conn->close();
 ?>

@@ -1,11 +1,8 @@
 <?php
-session_start();
-
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
-
-require_once 'db_connect.php'; 
+// Admin + Staff page access
+require_once 'auth_check.php';
+requireRole(['Admin', 'Staff']); // admins + staff allowed
+require_once 'db_connect.php';
 ?>
 
 <!DOCTYPE html>
@@ -164,7 +161,7 @@ require_once 'db_connect.php';
     </header>
 
     <main>
-      <h2>Welcome back, Admin!</h2>
+      <h2>Welcome back!</h2>
 <div class="history-buttons">
       <a href="ADMIN_Delete_History.php"><button>View Delete History</button></a>
       <a href="ADMIN_Edit_History.php"><button>View Edit History</button></a>

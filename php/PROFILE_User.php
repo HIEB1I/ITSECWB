@@ -1,5 +1,7 @@
 <?php
-session_start();
+// Any Role
+require_once 'auth_check.php';
+requireLogin(); // any logged-in role
 require_once 'db_connect.php';
 
 // Redirect to login if not logged in
@@ -10,16 +12,14 @@ if (!isset($_SESSION['userID'])) {
 
 $userID = $_SESSION['userID'];
 
-// Handle address update
+// ------------------ Address Update ------------------
 if (isset($_POST['saveAddressEdit'])) {
     $newAddress = trim($_POST['editAddress']);
-    
-    // Prepare and execute update query
     $updateStmt = $conn->prepare('UPDATE USERS SET Address = ? WHERE userID = ?');
     if ($updateStmt) {
         $updateStmt->bind_param('ss', $newAddress, $userID);
         if ($updateStmt->execute()) {
-            $address = $newAddress; // Update local variable
+            $address = $newAddress;
             $success_message = "✅ Address updated successfully";
         } else {
             $error_message = "❌ Failed to update address";
@@ -28,74 +28,77 @@ if (isset($_POST['saveAddressEdit'])) {
     }
 }
 
-// Handle account details update
+// ------------------ Account Details Update ------------------
 if (isset($_POST['saveAccountEdit'])) {
     $newFirstName = trim($_POST['editFirstName']);
-    $newLastName = trim($_POST['editLastName']);
-    $newEmail = trim($_POST['editEmail']);
-    $newPassword = trim($_POST['editPassword']);
-    $confirmPassword = trim($_POST['editPasswordConfirm']);
-    
-    // Validate inputs
-    $updateFields = array();
+    $newLastName  = trim($_POST['editLastName']);
+    $newEmail     = trim($_POST['editEmail']);
+    $newPassword  = $_POST['editPassword'] ?? '';
+    $confirmPassword = $_POST['editPasswordConfirm'] ?? '';
+
+    $updateFields = [];
     $types = '';
-    $params = array();
-    
+    $params = [];
+
     if (!empty($newFirstName)) {
         $updateFields[] = "FirstName = ?";
         $types .= 's';
         $params[] = $newFirstName;
     }
-    
+
     if (!empty($newLastName)) {
         $updateFields[] = "LastName = ?";
         $types .= 's';
         $params[] = $newLastName;
     }
-    
+
     if (!empty($newEmail)) {
         $updateFields[] = "Email = ?";
         $types .= 's';
         $params[] = $newEmail;
     }
-    
-    // Handle password update
+
+    // Only run password checks if the user entered a new password
     if (!empty($newPassword)) {
-        if ($newPassword === $confirmPassword) {
+        $minLength = 8;
+        if (
+            strlen($newPassword) < $minLength ||
+            !preg_match('/[A-Z]/', $newPassword) ||  // Uppercase
+            !preg_match('/[a-z]/', $newPassword) ||  // Lowercase
+            !preg_match('/[0-9]/', $newPassword) ||  // Number
+            !preg_match('/[\W]/', $newPassword)      // Special char
+        ) {
+            $error_message = "❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.";
+        } elseif ($newPassword !== $confirmPassword) {
+            $error_message = "❌ Passwords do not match";
+        } else {
             $updateFields[] = "Password = ?";
             $types .= 's';
             $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
-        } else {
-            $error_message = "❌ Passwords do not match";
         }
     }
-    
-    // Only proceed if there are fields to update and no errors
+
+    // Only update if there are fields and no errors
     if (!empty($updateFields) && !isset($error_message)) {
-        // Add userID to parameters
         $types .= 's';
         $params[] = $userID;
-        
-        // Create update query
+
         $sql = "UPDATE USERS SET " . implode(", ", $updateFields) . " WHERE userID = ?";
-        
-        // Prepare and execute
         $updateStmt = $conn->prepare($sql);
+
         if ($updateStmt) {
-            // Create array reference for bind_param
-            $bindParams = array($types);
-            for ($i = 0; $i < count($params); $i++) {
-                $bindParams[] = &$params[$i];
+            $bindParams = array_merge([$types], $params);
+            $refs = [];
+            foreach ($bindParams as $key => $value) {
+                $refs[$key] = &$bindParams[$key];
             }
-            
-            call_user_func_array(array($updateStmt, 'bind_param'), $bindParams);
-            
+            call_user_func_array([$updateStmt, 'bind_param'], $refs);
+
             if ($updateStmt->execute()) {
                 $success_message = "✅ Account details updated successfully";
-                // Update local variables for display
-                $firstName = !empty($newFirstName) ? $newFirstName : $firstName;
-                $lastName = !empty($newLastName) ? $newLastName : $lastName;
-                $email = !empty($newEmail) ? $newEmail : $email;
+                if (!empty($newFirstName)) $firstName = $newFirstName;
+                if (!empty($newLastName)) $lastName = $newLastName;
+                if (!empty($newEmail)) $email = $newEmail;
             } else {
                 $error_message = "❌ Failed to update account details";
             }

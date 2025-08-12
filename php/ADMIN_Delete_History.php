@@ -1,10 +1,9 @@
 <?php
-session_start();
+// Admin + Staff page access
+require_once 'auth_check.php';
+requireRole(['Admin', 'Staff']); // admins + staff allowed
 require_once 'db_connect.php';
 
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
 
 $result = $conn->query("SELECT * FROM PRODUCT_DELETE_AUDIT ORDER BY Time_Deleted DESC");
 ?>

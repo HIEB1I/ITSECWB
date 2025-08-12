@@ -1,65 +1,47 @@
 <?php
 session_start();
+require_once 'db_connect.php';
 require 'validation.php';
 
-// Define database credentials
-$host = "localhost";
-$user = "root";
-$password = "";
-$dbname = "dbadm";
-
-// Create connection
-$conn = new mysqli($host, $user, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Auto-generate userID like U00001, U00002, etc.
+// Auto-generate userID
 $sql = "SELECT userID FROM USERS ORDER BY userID DESC LIMIT 1";
 $result = $conn->query($sql);
-
 if ($result->num_rows > 0) {
     $row = $result->fetch_assoc();
     $lastID = $row['userID'];
-    $num = (int)substr($lastID, 1);  // Remove the 'U' and convert to int
+    $num = (int)substr($lastID, 1);
     $num++;
     $userID = 'U' . str_pad($num, 5, '0', STR_PAD_LEFT);
 } else {
-    $userID = 'U00001';  // First user
+    $userID = 'U00001';
 }
 
-// Check if the form was submitted
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    // Get form data
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $passwordRaw = $_POST['password'];
-    $email = $_POST['email'];
-    $role = 'Customer'; 
+    $firstName = trim($_POST['firstName']);
+    $lastName  = trim($_POST['lastName']);
+    $email     = trim($_POST['email']);
+    
+    
+    // Enforce password complexity & length
+    $passwordPlain = $_POST['password'] ?? '';
+    $minLength = 8;
 
-    // DATA VALIDATION: validation checks & compile
-    $errors = [];
-
-    if (!validateString($firstName, 1, 50)) {
-        $errors[] = "First name must be between 1 and 50 characters.";
+    if (
+        strlen($passwordPlain) < $minLength ||
+        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
+        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
+        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
+        !preg_match('/[\W]/', $passwordPlain)      // Special char
+    ) {
+        die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
     }
-    if (!validateString($lastName, 1, 50)) {
-        $errors[] = "Last name must be between 1 and 50 characters.";
-    }
-    if (!validateString($passwordRaw, 6, 255)) {
-        $errors[] = "Password must be between 6 and 255 characters.";
-    }
+    // Store strong salted hash using password_hash (built-in salt)
+    // Hash the password (bcrypt with salt automatically handled)
+    $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
 
-    if (!empty($errors)) {
-      $_SESSION['errors'] = $errors;
-      header("Location: register.php");
-      exit;
-  }
 
-    // Prepare SQL and bind parameters
-    $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
+    $role = 'Customer';
+
     $stmt = $conn->prepare("INSERT INTO USERS (userID, FirstName, LastName, Password, Email, Role) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssss", $userID, $firstName, $lastName, $password, $email, $role);
 
@@ -67,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header("Location: login.php");
         exit();
     } else {
-        echo "<h3>Error: " . $stmt->error . "</h3>";
+        echo "<h3>Registration failed. Please try again.</h3>"; // Generic fail (#2)
     }
 
     $stmt->close();

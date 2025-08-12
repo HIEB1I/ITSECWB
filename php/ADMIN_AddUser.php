@@ -1,8 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
-  exit("Access denied.");
-}
+require_once 'auth_check.php';
+requireRole(['Admin']); // only admins allowed
 require_once 'db_connect.php';
 
 // Auto-generate next user ID
@@ -24,7 +22,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
     $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT); 
+       // Enforce password complexity & length
+    $passwordPlain = $_POST['password'] ?? '';
+    $minLength = 8;
+
+    if (
+        strlen($passwordPlain) < $minLength ||
+        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
+        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
+        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
+        !preg_match('/[\W]/', $passwordPlain)      // Special char
+    ) {
+        die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
+    }
+    // Store strong salted hash using password_hash (built-in salt)
+    // Hash the password (bcrypt with salt automatically handled)
+    $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
     $role = $_POST['role'];
     $address = $_POST['address'];
     $createdAt = $_POST['joined'];
