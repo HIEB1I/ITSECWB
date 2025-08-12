@@ -4,6 +4,8 @@ require_once 'auth_check.php';
 requireLogin(); // any logged-in role
 require_once 'db_connect.php';
 
+date_default_timezone_set('Asia/Manila'); 
+
 // Redirect to login if not logged in
 if (!isset($_SESSION['userID'])) {
     header('Location: login.php');
@@ -40,55 +42,98 @@ if (isset($_POST['saveAccountEdit'])) {
     $types = '';
     $params = [];
 
+    // Name and email updates
     if (!empty($newFirstName)) {
         $updateFields[] = "FirstName = ?";
         $types .= 's';
         $params[] = $newFirstName;
     }
-
     if (!empty($newLastName)) {
         $updateFields[] = "LastName = ?";
         $types .= 's';
         $params[] = $newLastName;
     }
-
     if (!empty($newEmail)) {
         $updateFields[] = "Email = ?";
         $types .= 's';
         $params[] = $newEmail;
     }
+// ---------------- PASSWORD SECTION ----------------
+if (!empty($newPassword)) {
+    $minLength = 8;
 
-    // Only run password checks if the user entered a new password
-    if (!empty($newPassword)) {
-        $minLength = 8;
-        if (
-            strlen($newPassword) < $minLength ||
-            !preg_match('/[A-Z]/', $newPassword) ||  // Uppercase
-            !preg_match('/[a-z]/', $newPassword) ||  // Lowercase
-            !preg_match('/[0-9]/', $newPassword) ||  // Number
-            !preg_match('/[\W]/', $newPassword)      // Special char
-        ) {
-            $error_message = "❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.";
-        } elseif ($newPassword !== $confirmPassword) {
-            $error_message = "❌ Passwords do not match";
-        } else {
-            $updateFields[] = "Password = ?";
-            $types .= 's';
-            $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
+    // Complexity check
+    if (
+        strlen($newPassword) < $minLength ||
+        !preg_match('/[A-Z]/', $newPassword) ||  // Uppercase
+        !preg_match('/[a-z]/', $newPassword) ||  // Lowercase
+        !preg_match('/[0-9]/', $newPassword) ||  // Number
+        !preg_match('/[\W]/', $newPassword)      // Special char
+    ) {
+        $error_message = "❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.";
+    }
+    elseif ($newPassword !== $confirmPassword) {
+        $error_message = "❌ Passwords do not match.";
+    }
+    else {
+        // Get current password + last change date
+        $dateStmt = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
+        $dateStmt->bind_param('s', $userID);
+        $dateStmt->execute();
+        $currentData = $dateStmt->get_result()->fetch_assoc();
+        $dateStmt->close();
+
+        // Enforce 1-minute cooldown
+        if (!empty($currentData['LastPasswordChange']) &&
+            strtotime($currentData['LastPasswordChange']) > strtotime('-1 minute')) {
+            $error_message = "❌ Password can only be changed once every minute.";
+        }
+        else {
+            // Check against ALL old passwords
+            $historyStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
+            $historyStmt->bind_param('s', $userID);
+            $historyStmt->execute();
+            $historyResult = $historyStmt->get_result();
+
+            $reuseFound = false;
+            while ($row = $historyResult->fetch_assoc()) {
+                if (password_verify($newPassword, $row['PasswordHash'])) {
+                    $reuseFound = true;
+                    break;
+                }
+            }
+            $historyStmt->close();
+
+            if ($reuseFound || password_verify($newPassword, $currentData['Password'])) {
+                $error_message = "❌ You cannot reuse any previous password.";
+            } else {
+                // Save current password to history table
+                $saveHistory = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
+                $saveHistory->bind_param('ss', $userID, $currentData['Password']);
+                $saveHistory->execute();
+                $saveHistory->close();
+
+                // Update to new password + set timestamp
+                $updateFields[] = "Password = ?";
+                $types .= 's';
+                $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
+
+                $updateFields[] = "LastPasswordChange = NOW()";
+            }
         }
     }
+}
+// ---------------- END PASSWORD SECTION ----------------
 
-    // Only update if there are fields and no errors
+    // Perform update if valid
     if (!empty($updateFields) && !isset($error_message)) {
         $types .= 's';
         $params[] = $userID;
-
         $sql = "UPDATE USERS SET " . implode(", ", $updateFields) . " WHERE userID = ?";
         $updateStmt = $conn->prepare($sql);
 
         if ($updateStmt) {
             $bindParams = array_merge([$types], $params);
-            $refs = [];
             foreach ($bindParams as $key => $value) {
                 $refs[$key] = &$bindParams[$key];
             }
@@ -106,7 +151,6 @@ if (isset($_POST['saveAccountEdit'])) {
         }
     }
 }
-
 // Fetch user info
 $stmt = $conn->prepare('SELECT FirstName, LastName, Email, Address FROM USERS WHERE userID = ? LIMIT 1');
 $stmt->bind_param('s', $userID);
