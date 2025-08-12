@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="email" name="email" placeholder="Email Address" required>
       <input type="password" name="password" placeholder="Password" required>
       <div style="text-align: left; margin-top: 5px; margin-bottom: 10px;">
-        <a href="#">Forgot Password?</a>
+        <a href="forgot_password.php">Forgot Password?</a>
       </div>
       <button class="sign-in-btn" type="submit">Sign in</button>
     </form>
