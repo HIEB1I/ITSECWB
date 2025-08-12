@@ -6,7 +6,7 @@ require_once 'db_connect.php';
 
 $stmt = $conn->prepare("
     SELECT event_id, event_timestamp, event_type, event_description, 
-           user_id, user_role, ip_address
+           user_id, user_role
     FROM security_logs
     ORDER BY event_timestamp DESC
 ");

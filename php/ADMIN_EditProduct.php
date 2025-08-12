@@ -1,43 +1,89 @@
 <?php
-// Admin + Staff page access
 require_once 'auth_check.php';
-requireRole(['Admin', 'Staff']); // admins + staff allowed
+requireRole(['Admin', 'Staff']); 
 require_once 'db_connect.php';
+require_once 'validation.php';
+require_once 'security_logger.php';
 
+session_start();
+$logger = new SecurityLogger($conn);
 
 $productID = $_GET['productID'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $category = $_POST['category'];
-    $description = $_POST['description'];
-    $size = $_POST['size'];
-    $quantity = $_POST['quantity'];
-    $price = $_POST['price'];
-    $imageData = null;
+    $name        = $_POST['name'] ?? '';
+    $category    = $_POST['category'] ?? '';
+    $description = $_POST['description'] ?? '';
+    $size        = $_POST['size'] ?? '';
+    $quantity    = $_POST['quantity'] ?? '';
+    $price       = $_POST['price'] ?? '';
+    $imageData   = null;
 
     if (isset($_FILES['image']) && $_FILES['image']['tmp_name']) {
         $imageData = file_get_contents($_FILES['image']['tmp_name']);
     }
 
-    $query = $imageData 
-        ? "UPDATE PRODUCT SET ProductName=?, Category=?, Description=?, Size=?, QuantityAvail=?, Price=?, Image=? WHERE productID=?"
-        : "UPDATE PRODUCT SET ProductName=?, Category=?, Description=?, Size=?, QuantityAvail=?, Price=? WHERE productID=?";
+    // Validation
+    $errors = [];
 
-    $stmt = $conn->prepare($query);
+    if (!validateString($name, 3, 100)) {
+        $errors[] = "Product name must be between 3 and 100 characters.";
+        $logger->logInputValidationFailure("ProductName", "Length between 3 and 100", $name);
+    }
+    if (!validateString($description, 10, 500)) {
+        $errors[] = "Description must be between 10 and 500 characters.";
+        $logger->logInputValidationFailure("Description", "Length between 10 and 500", $description);
+    }
+    if (!validateNumber($quantity, 1, 1000)) {
+        $errors[] = "Quantity must be between 1 and 1000.";
+        $logger->logInputValidationFailure("QuantityAvail", "Between 1 and 1000", $quantity);
+    }
+    if (!validateNumber($price, 0, 100000)) {
+        $errors[] = "Price must be between 0 and 100000.";
+        $logger->logInputValidationFailure("Price", "Between 0 and 100000", $price);
+    }
 
+    if (!empty($errors)) {
+        $_SESSION['errors'] = $errors;
+        header("Location: ADMIN_EditProduct.php?productID=" . urlencode($productID));
+        exit;
+    }
+
+    // Update query
     if ($imageData) {
+        $stmt = $conn->prepare(
+            "UPDATE PRODUCT 
+             SET ProductName=?, Category=?, Description=?, Size=?, QuantityAvail=?, Price=?, Image=? 
+             WHERE productID=?"
+        );
         $stmt->bind_param("sssssdss", $name, $category, $description, $size, $quantity, $price, $imageData, $productID);
     } else {
+        $stmt = $conn->prepare(
+            "UPDATE PRODUCT 
+             SET ProductName=?, Category=?, Description=?, Size=?, QuantityAvail=?, Price=? 
+             WHERE productID=?"
+        );
         $stmt->bind_param("ssssdds", $name, $category, $description, $size, $quantity, $price, $productID);
     }
 
     if ($stmt->execute()) {
+        $logger->logEvent(
+            'APPLICATION_SUCCESS',
+            "Product updated successfully: {$productID} - {$name}",
+            $_SESSION['user_id'] ?? null,
+            $_SESSION['role'] ?? null
+        );
         header("Location: ADMIN_Dashboard.php");
-        exit();
+        exit;
     } else {
-    echo "<script>alert('Error: " . $conn->error . "');</script>";    
-  }
+        $logger->logApplicationError(
+            "Failed to update product: {$productID} - {$name}",
+            $stmt->error
+        );
+        $_SESSION['errors'] = ["Update failed: " . $stmt->error];
+        header("Location: ADMIN_EditProduct.php?productID=" . urlencode($productID));
+        exit;
+    }
 }
 
 $stmt = $conn->prepare("SELECT * FROM PRODUCT WHERE productID = ?");
@@ -49,7 +95,10 @@ $product = $result->fetch_assoc();
 if (!$product) {
     exit("Product not found.");
 }
-$imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($product['Image']) : '';
+
+$imageBase64 = $product['Image'] 
+    ? 'data:image/jpeg;base64,' . base64_encode($product['Image']) 
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">

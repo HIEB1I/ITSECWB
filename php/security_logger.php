@@ -9,15 +9,7 @@ class SecurityLogger {
         $this->conn = $database_connection;
     }
     
-    /**
-     * Log security events to database
-     * @param string $event_type - Type of event from ENUM
-     * @param string $description - Event description
-     * @param int|null $user_id - User ID if available
-     * @param string|null $user_role - User role if available
-     * @return bool - Success status
-     */
-    public function logEvent($event_type, $description, $user_id = null, $user_role = null, $ip_address = null) {
+    public function logEvent($event_type, $description, $user_id = null, $user_role = null) {
         try {        
            // Get user info from session if not provided
             if (session_status() === PHP_SESSION_ACTIVE) {
@@ -38,7 +30,7 @@ class SecurityLogger {
             $stmt = $this->conn->prepare("
                 INSERT INTO {$this->log_table} 
                 (event_type, user_id, user_role, event_description) 
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?)
             ");
             
             if (!$stmt) {
@@ -46,7 +38,7 @@ class SecurityLogger {
                 return false;
             }
             
-            $stmt->bind_param("sisss", $event_type, $user_id, $user_role, $ip_address, $description);
+            $stmt->bind_param("siss", $event_type, $user_id, $user_role, $description);
             $result = $stmt->execute();
             
             if (!$result) {
@@ -152,24 +144,4 @@ class SecurityLogger {
         }
     }
 }
-
-// Example usage in your authentication script:
-/*
-// After successful login:
-require_once 'security_logger.php';
-$logger = new SecurityLogger($conn);
-$logger->logAuthSuccess($_SESSION['user_id'], $_SESSION['role']);
-
-// After failed login:
-$logger->logAuthFailure("Invalid password", $_POST['username']);
-
-// After input validation failure:
-$logger->logInputValidationFailure("email", "invalid email format");
-
-// After access control failure:
-$logger->logAccessControlFailure("admin dashboard", "Admin", $_SESSION['role']);
-
-// After application error:
-$logger->logApplicationError("Database connection failed", "login.php");
-*/
 ?>

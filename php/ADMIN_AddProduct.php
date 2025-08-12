@@ -6,6 +6,7 @@ require_once 'db_connect.php';
 require_once 'validation.php';
 require_once 'security_logger.php';
 
+// LOGGING
 $logger = new SecurityLogger($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -38,13 +39,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if (!empty($errors)) {
     $_SESSION['errors'] = $errors;
-    // Log a general validation failure event
-    $logger->logEvent(
-      'INPUT_VALIDATION_FAILURE',
-      "Add Product validation failed. Errors: " . implode("; ", $errors),
-      $_SESSION['user_id'] ?? null,
-      $_SESSION['role'] ?? null
-    );
     header("Location: ADMIN_AddProduct.php");
     exit;
   }
@@ -215,7 +209,6 @@ $imageBase64 = '';
         <input type="file" name="image" id="image" accept="image/png, image/jpeg" style="display:none;">
 
         <button type="submit" class="save-btn">SAVE</button>
-        <?php if (isset($error)) echo "<p style='color: red;'>$error</p>"; ?>
       </form>
     </main>
 
