@@ -12,10 +12,14 @@ CREATE TABLE IF NOT EXISTS USERS (
   Role ENUM('Customer', 'Staff', 'Admin') NOT NULL,
   Created_At TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FailedAttempts INT DEFAULT 0,
-  LockoutUntil DATETIME NULL
+  LockoutUntil DATETIME NULL,
+  LastPasswordChange DATETIME DEFAULT NULL,
+  SecurityQuestion VARCHAR(255) NOT NULL,
+  SecurityAnswerHash VARCHAR(255) NOT NULL,
+  LastLoginAttempt DATETIME NULL,
+  LastLoginIP VARCHAR(45) NULL,
+  lastLoginStatus LastLoginStatus VARCHAR(20) NULL
 );
-
-
 
 CREATE TABLE IF NOT EXISTS PRODUCT (
   productID VARCHAR(10) NOT NULL PRIMARY KEY,
@@ -83,6 +87,15 @@ CREATE TABLE IF NOT EXISTS CART_ITEMS_AUDIT (
   Price DOUBLE,
   FOREIGN KEY (ref_cartauditID) REFERENCES CART_AUDIT(cartauditID) ON DELETE CASCADE
 );
+
+CREATE TABLE USER_PASSWORD_HISTORY (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    userID VARCHAR(10) NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    ChangedAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (userID) REFERENCES USERS(userID) ON DELETE CASCADE
+);
+
 
 DELIMITER $$
 
@@ -380,6 +393,7 @@ GRANT USAGE ON *.* TO 'staff_user'@'localhost';
 
 -- PRODUCT: Read + column-specific update + references
 GRANT SELECT, INSERT, UPDATE (QuantityAvail), REFERENCES ON dbadm.PRODUCT TO 'staff_user'@'localhost';
+GRANT SELECT, INSERT, REFERENCES ON dbadm.USER_PASSWORD_HISTORY TO 'staff_user'@'localhost';
 
 -- USERS: Read + update
 GRANT SELECT, UPDATE ON dbadm.USERS TO 'staff_user'@'localhost';
@@ -408,6 +422,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbadm.CART_ITEMS TO 'customer_user'@'loc
 
 -- PRODUCT: Read + column-specific update + references
 GRANT SELECT, INSERT, UPDATE (QuantityAvail), REFERENCES ON dbadm.PRODUCT TO 'customer_user'@'localhost';
+GRANT SELECT, INSERT, REFERENCES ON dbadm.USER_PASSWORD_HISTORY TO 'customer_user'@'localhost';
 
 -- USERS: Read + update
 GRANT SELECT, UPDATE ON dbadm.USERS TO 'customer_user'@'localhost';
@@ -420,7 +435,22 @@ GRANT SELECT ON dbadm.currencies TO 'customer_user'@'localhost';
 -- Stored procedures
 GRANT EXECUTE ON PROCEDURE dbadm.check_product_stock TO 'customer_user'@'localhost';
 GRANT EXECUTE ON PROCEDURE dbadm.get_user_orders TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.update_cart_total TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.get_customer_summary TO 'customer_user'@'localhost';
+GRANT EXECUTE ON PROCEDURE dbadm.convert_cart_currency TO 'customer_user'@'localhost';
 
+
+-- Create the public user account 
+CREATE USER 'public_user'@'localhost';
+
+-- Allow checking if an email already exists
+GRANT SELECT (userID, Email) ON dbadm.USERS TO 'public_user'@'localhost';
+
+-- Allow inserting new users (for registration)
+GRANT INSERT (userID, FirstName, LastName, Password, Email, Role) 
+ON dbadm.USERS TO 'public_user'@'localhost';
+
+FLUSH PRIVILEGES;
 
 
 
