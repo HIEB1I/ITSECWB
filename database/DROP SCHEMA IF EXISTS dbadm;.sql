@@ -347,14 +347,13 @@ CREATE TABLE security_logs (
         'AUTHENTICATION_FAILURE', 
         'INPUT_VALIDATION_FAILURE',
         'ACCESS_CONTROL_FAILURE',
-		    'APPLICAITON_SUCCESS',
+	'APPLICATION_ERROR',
         'APPLICATION_ERROR'
     ) NOT NULL,
     user_id BIGINT NULL,
-    user_role VARCHAR(50) NULL,
+    user_role ENUM('Customer', 'Staff', 'Admin') NULL,
     event_description VARCHAR(255) NOT NULL
 );
-
 
 
 

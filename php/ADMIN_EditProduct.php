@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->bind_param("ssssdds", $name, $category, $description, $size, $quantity, $price, $productID);
     }
 
-    if ($stmt->execute()) {
+      if ($stmt->execute()) {
         $logger->logEvent(
             'APPLICATION_SUCCESS',
             "Product updated successfully: {$productID} - {$name}",
