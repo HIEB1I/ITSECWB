@@ -2,6 +2,8 @@
 session_start();
 date_default_timezone_set('Asia/Manila');
 
+require_once 'security_logger.php';
+
 $error_message = '';
 $email_prefill = '';
 
@@ -17,6 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             error_log("DB Connection failed: " . $conn->connect_error);
             $error_message = "Service temporarily unavailable. Please try again later.";
         } else {
+
+          $logger = new SecurityLogger($conn);
+          
             $now = date("Y-m-d H:i:s");
             $ip  = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
@@ -52,6 +57,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $upd->bind_param("sss", $now, $ip, $email_prefill);
                 $upd->execute();
                 $upd->close();
+                
+                // LOGGING: unsucessful
+                $logger->logAuthFailure("Login attempt on locked account", $email_prefill);
 
                 $error_message = "❌ Account locked due to multiple failed login attempts. Try again later.";
             } else {
@@ -62,6 +70,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $upd->bind_param("sss", $now, $ip, $email_prefill);
                     $upd->execute();
                     $upd->close();
+                      
+                    // LOGGING: sucessful
+                    $logger->logAuthSuccess($user['userID'], $user['Role'], "User logged in successfully from IP: " . $ip);
 
                     // Set session for logged-in user
                     $_SESSION['userID'] = $user['userID'];
