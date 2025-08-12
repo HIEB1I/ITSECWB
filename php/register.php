@@ -1,5 +1,6 @@
 <?php
 session_start();
+require 'validation.php';
 
 // Define database credentials
 $host = "localhost";
@@ -34,24 +35,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Get form data
     $firstName = $_POST['firstName'];
     $lastName = $_POST['lastName'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $passwordRaw = $_POST['password'];
     $email = $_POST['email'];
     $role = 'Customer'; 
 
+    // DATA VALIDATION: validation checks & compile
+    $errors = [];
+
+    if (!validateString($firstName, 1, 50)) {
+        $errors[] = "First name must be between 1 and 50 characters.";
+    }
+    if (!validateString($lastName, 1, 50)) {
+        $errors[] = "Last name must be between 1 and 50 characters.";
+    }
+    if (!validateString($passwordRaw, 6, 255)) {
+        $errors[] = "Password must be between 6 and 255 characters.";
+    }
+
+    if (!empty($errors)) {
+      $_SESSION['errors'] = $errors;
+      header("Location: register.php");
+      exit;
+  }
+
     // Prepare SQL and bind parameters
+    $password = password_hash($passwordRaw, PASSWORD_DEFAULT);
     $stmt = $conn->prepare("INSERT INTO USERS (userID, FirstName, LastName, Password, Email, Role) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssss", $userID, $firstName, $lastName, $password, $email, $role);
 
     if ($stmt->execute()) {
-        
         header("Location: login.php");
         exit();
     } else {
-        
         echo "<h3>Error: " . $stmt->error . "</h3>";
     }
 
-    
     $stmt->close();
     $conn->close();
 }
@@ -154,6 +172,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   <div class="register-container">
     <h2>Create account</h2>
     <form method="post" action="">
+
+    <!-- DATA VALIDATION: display compiled errors -->
+    <?php if (!empty($_SESSION['errors'])): ?>
+      <ul style="color:red;">
+        <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
+      </ul>
+        <?php unset($_SESSION['errors']); ?>
+    <?php endif; ?>
+    
       <input type="text" name="firstName" placeholder="First Name" required>
       <input type="text" name="lastName" placeholder="Last Name" required>
       <input type="email" name="email" placeholder="Email Address" required>

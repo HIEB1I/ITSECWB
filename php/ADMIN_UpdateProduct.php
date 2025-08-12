@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'db_connect.php';
+require_once 'validation.php';
 
 if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
   exit("Access denied.");
@@ -14,6 +15,28 @@ $category = $_POST['Category'];
 $desc = $_POST['Description'];
 $qty = (int)$_POST['QuantityAvail'];
 $price = (float)$_POST['Price'];
+
+// DATA VALIDATION: validation checks & compile
+$errors = [];
+
+  if (!validateString($name, 3, 100)) {
+    $errors[] = "Product name must be between 3 and 100 characters.";
+  }
+  if (!validateString($description, 10, 500)) {
+    $errors[] = "Invalid description: must be between 10 and 500 characters.";
+  }
+  if (!validateNumber($quantity, 1, 1000)) {
+    $errors[] = "Invalid quantity: must be between 1 and 1000.";
+  }
+  if (!validateNumber($price, 0, 100000)) {
+    $errors[] = "Invalid price: must be between 0 and 100000.";
+  } 
+
+  if (!empty($errors)) {
+    $_SESSION['errors'] = $errors;
+    header("Location: ADMIN_EditProduct.php");
+    exit;
+  }
 
 //  If image was uploaded
 if (isset($_FILES['Image']) && $_FILES['Image']['size'] > 0) {

@@ -115,6 +115,14 @@ $imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($pr
     <form method="POST" enctype="multipart/form-data">
       <div style="background: #f5f5f5; padding: 15px; margin-bottom: 20px; font-weight: bold; text-align: center;">EDIT PRODUCT</div>
 
+      <!-- DATA VALIDATION: display compiled errors -->
+      <?php if (!empty($_SESSION['errors'])): ?>
+          <ul style="color:red;">
+            <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
+          </ul>
+            <?php unset($_SESSION['errors']); ?>
+        <?php endif; ?>
+      
       <label>PRODUCT ID:</label>
       <p><?= htmlspecialchars($product['productID']) ?></p>
 

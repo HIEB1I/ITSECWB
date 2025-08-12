@@ -5,6 +5,7 @@ if (!isset($_SESSION['userID']) || $_SESSION['role'] == 'Customer') {
 }
 
 require_once 'db_connect.php'; 
+require_once 'validation.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = $_POST['name'];
@@ -13,6 +14,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $size = $_POST['size'];
   $quantity = $_POST['quantity'];
   $price = $_POST['price'];
+
+  // DATA VALIDATION: validation checks & compile
+  $errors = [];
+
+  if (!validateString($name, 3, 100)) {
+    $errors[] = "Product name must be between 3 and 100 characters.";
+  }
+  if (!validateString($description, 10, 500)) {
+    $errors[] = "Invalid description: must be between 10 and 500 characters.";
+  }
+  if (!validateNumber($quantity, 1, 1000)) {
+    $errors[] = "Invalid quantity: must be between 1 and 1000.";
+  }
+  if (!validateNumber($price, 0, 100000)) {
+    $errors[] = "Invalid price: must be between 0 and 100000.";
+  } 
+
+  if (!empty($errors)) {
+    $_SESSION['errors'] = $errors;
+    header("Location: ADMIN_AddProduct.php");
+    exit;
+  }
 
   $result = $conn->query("SELECT productID FROM PRODUCT ORDER BY productID DESC LIMIT 1");
   if ($result && $result->num_rows > 0) {
@@ -114,7 +137,15 @@ $imageBase64 = '';
     <main>
       <form method="POST" enctype="multipart/form-data">
         <div style="background: #f5f5f5; padding: 15px; margin-bottom: 20px; font-weight: bold; text-align: center;">ADD PRODUCT</div>
-    
+
+        <!-- DATA VALIDATION: display compiled errors -->
+        <?php if (!empty($_SESSION['errors'])): ?>
+          <ul style="color:red;">
+            <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
+          </ul>
+            <?php unset($_SESSION['errors']); ?>
+        <?php endif; ?>
+
         <label for="name">PRODUCT NAME:</label>
         <input type="text" id="name" name="name" required>
 
