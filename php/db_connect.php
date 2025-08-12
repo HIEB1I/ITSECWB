@@ -24,8 +24,8 @@ if (isset($_SESSION['role'])) {
             exit("Access denied."); 
     }
 } else { 
-     // Allow public access only to register.php
-    if (basename($_SERVER['PHP_SELF']) === 'register.php') {
+    // Allow public access to register.php and forgot_password.php
+    if (in_array(basename($_SERVER['PHP_SELF']), ['register.php', 'forgot_password.php'])) {
         $db_user = "public_user"; // low privilege user for registration
     } else {
         exit("Access denied.");
