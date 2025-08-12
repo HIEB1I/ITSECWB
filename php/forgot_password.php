@@ -70,45 +70,102 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // STEP 3: Reset password
-    elseif (isset($_POST['step']) && $_POST['step'] == 3) {
-        $new_password = $_POST['new_password'] ?? '';
-        $confirm_password = $_POST['confirm_password'] ?? '';
+// STEP 3: Reset password
+elseif (isset($_POST['step']) && $_POST['step'] == 3) {
+    $new_password = $_POST['new_password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
 
-        if ($new_password !== $confirm_password) {
-            $error_message = "❌ Passwords do not match.";
-            $step = 3;
-        } elseif (
-            strlen($new_password) < 8 ||
-            !preg_match('/[A-Z]/', $new_password) ||
-            !preg_match('/[a-z]/', $new_password) ||
-            !preg_match('/[0-9]/', $new_password) ||
-            !preg_match('/[\W]/', $new_password)
-        ) {
-            $error_message = "❌ Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
-            $step = 3;
-        } else {
-            $user_id = $_SESSION['reset_user_id'] ?? '';
-            if ($user_id) {
+    if ($new_password !== $confirm_password) {
+        $error_message = "❌ Passwords do not match.";
+        $step = 3;
+    } elseif (
+        strlen($new_password) < 8 ||
+        !preg_match('/[A-Z]/', $new_password) ||
+        !preg_match('/[a-z]/', $new_password) ||
+        !preg_match('/[0-9]/', $new_password) ||
+        !preg_match('/[\W]/', $new_password)
+    ) {
+        $error_message = "❌ Password must be at least 8 characters long and include uppercase, lowercase, number, and special character.";
+        $step = 3;
+    } else {
+        $user_id = $_SESSION['reset_user_id'] ?? '';
+        if ($user_id) {
+
+            // Fetch current password and last change time
+            $stmt = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
+            $stmt->bind_param("s", $user_id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $userData = $result->fetch_assoc();
+            $stmt->close();
+
+            if (!$userData) {
+                $error_message = "❌ User not found.";
+                $step = 1;
+            } else {
+                // Rule 2: Check if at least 1 day has passed since last password change
+                if (!empty($userData['LastPasswordChange'])) {
+                    $lastChange = strtotime($userData['LastPasswordChange']);
+                    if ((time() - $lastChange) < 86400) { // 86400 seconds = 1 day
+                        $error_message = "❌ You can only change your password once every 24 hours.";
+                        $step = 3;
+                        goto skip_reset;
+                    }
+                }
+
+                // Rule 1: Prevent password re-use (check current and history)
+                $reuseFound = false;
+
+                // Check current password
+                if (password_verify($new_password, $userData['Password'])) {
+                    $reuseFound = true;
+                }
+
+                // Check password history table
+                $histStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
+                $histStmt->bind_param("s", $user_id);
+                $histStmt->execute();
+                $histResult = $histStmt->get_result();
+                while ($row = $histResult->fetch_assoc()) {
+                    if (password_verify($new_password, $row['PasswordHash'])) {
+                        $reuseFound = true;
+                        break;
+                    }
+                }
+                $histStmt->close();
+
+                if ($reuseFound) {
+                    $error_message = "❌ You cannot reuse any of your previous passwords.";
+                    $step = 3;
+                    goto skip_reset;
+                }
+
+                // Save current password into history before updating
+                $saveHist = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
+                $saveHist->bind_param("ss", $user_id, $userData['Password']);
+                $saveHist->execute();
+                $saveHist->close();
+
+                // Update new password and timestamp
                 $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
-
-                // IMPORTANT: ensure the DB user used by db_connect.php has UPDATE privileges for this column
-                $stmt = $conn->prepare("UPDATE USERS SET Password = ? WHERE userID = ?");
-                $stmt->bind_param("ss", $hashed_password, $user_id);
-                $stmt->execute();
-                $stmt->close();
+                $updateStmt = $conn->prepare("UPDATE USERS SET Password = ?, LastPasswordChange = NOW() WHERE userID = ?");
+                $updateStmt->bind_param("ss", $hashed_password, $user_id);
+                $updateStmt->execute();
+                $updateStmt->close();
 
                 // Clear session data for reset
                 unset($_SESSION['reset_user_id'], $_SESSION['reset_email']);
 
                 header("Location: login.php?reset=success");
                 exit();
-            } else {
-                $error_message = "❌ Session expired. Please start over.";
-                $step = 1;
             }
+        } else {
+            $error_message = "❌ Session expired. Please start over.";
+            $step = 1;
         }
     }
+}
+    skip_reset:
 }
 ?>
 
