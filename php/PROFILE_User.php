@@ -58,72 +58,87 @@ if (isset($_POST['saveAccountEdit'])) {
         $types .= 's';
         $params[] = $newEmail;
     }
-// ---------------- PASSWORD SECTION ----------------
+// ---------------- PASSWORD SECTION WITH RE-AUTH & FORCE LOGOUT ----------------
 if (!empty($newPassword)) {
+    $currentPasswordInput = $_POST['currentPassword'] ?? ''; // Current password input
     $minLength = 8;
 
-    // Complexity check
-    if (
+    // Step 1: Fetch current password hash
+    $stmtAuth = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
+    $stmtAuth->bind_param('s', $userID);
+    $stmtAuth->execute();
+    $userData = $stmtAuth->get_result()->fetch_assoc();
+    $stmtAuth->close();
+
+    // Step 2: Re-authenticate
+    if (!password_verify($currentPasswordInput, $userData['Password'])) {
+        $error_message = "❌ Current password is incorrect. Please try again.";
+    }
+    // Step 3: Validate new password
+    elseif (
         strlen($newPassword) < $minLength ||
-        !preg_match('/[A-Z]/', $newPassword) ||  // Uppercase
-        !preg_match('/[a-z]/', $newPassword) ||  // Lowercase
-        !preg_match('/[0-9]/', $newPassword) ||  // Number
-        !preg_match('/[\W]/', $newPassword)      // Special char
+        !preg_match('/[A-Z]/', $newPassword) ||  
+        !preg_match('/[a-z]/', $newPassword) ||  
+        !preg_match('/[0-9]/', $newPassword) ||  
+        !preg_match('/[\W]/', $newPassword)      
     ) {
         $error_message = "❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.";
     }
+    // Step 4: Match confirmation
     elseif ($newPassword !== $confirmPassword) {
-        $error_message = "❌ Passwords do not match.";
+        $error_message = "❌ New passwords do not match.";
+    }
+    // Step 5: Enforce cooldown
+    elseif (!empty($userData['LastPasswordChange']) &&
+        strtotime($userData['LastPasswordChange']) > strtotime('-1 minute')) {
+        $error_message = "❌ Password can only be changed once every minute.";
     }
     else {
-        // Get current password + last change date
-        $dateStmt = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
-        $dateStmt->bind_param('s', $userID);
-        $dateStmt->execute();
-        $currentData = $dateStmt->get_result()->fetch_assoc();
-        $dateStmt->close();
+        // Step 6: Check against password history
+        $historyStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
+        $historyStmt->bind_param('s', $userID);
+        $historyStmt->execute();
+        $historyResult = $historyStmt->get_result();
 
-        // Enforce 1-minute cooldown
-        if (!empty($currentData['LastPasswordChange']) &&
-            strtotime($currentData['LastPasswordChange']) > strtotime('-1 minute')) {
-            $error_message = "❌ Password can only be changed once every minute.";
-        }
-        else {
-            // Check against ALL old passwords
-            $historyStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
-            $historyStmt->bind_param('s', $userID);
-            $historyStmt->execute();
-            $historyResult = $historyStmt->get_result();
-
-            $reuseFound = false;
-            while ($row = $historyResult->fetch_assoc()) {
-                if (password_verify($newPassword, $row['PasswordHash'])) {
-                    $reuseFound = true;
-                    break;
-                }
+        $reuseFound = false;
+        while ($row = $historyResult->fetch_assoc()) {
+            if (password_verify($newPassword, $row['PasswordHash'])) {
+                $reuseFound = true;
+                break;
             }
-            $historyStmt->close();
+        }
+        $historyStmt->close();
 
-            if ($reuseFound || password_verify($newPassword, $currentData['Password'])) {
-                $error_message = "❌ You cannot reuse any previous password.";
+        if ($reuseFound || password_verify($newPassword, $userData['Password'])) {
+            $error_message = "❌ You cannot reuse any previous password.";
+        } else {
+            // Step 7: Save old password to history
+            $saveHistory = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
+            $saveHistory->bind_param('ss', $userID, $userData['Password']);
+            $saveHistory->execute();
+            $saveHistory->close();
+
+            // Step 8: Update to new password
+            $updateStmt = $conn->prepare("UPDATE USERS SET Password = ?, LastPasswordChange = NOW() WHERE userID = ?");
+            $newHashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+            $updateStmt->bind_param('ss', $newHashedPassword, $userID);
+
+            if ($updateStmt->execute()) {
+                $updateStmt->close();
+
+                // Step 9: Force logout
+                session_unset();
+                session_destroy();
+                header("Location: login.php?message=" . urlencode("Password changed successfully. Please log in again."));
+                exit();
             } else {
-                // Save current password to history table
-                $saveHistory = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
-                $saveHistory->bind_param('ss', $userID, $currentData['Password']);
-                $saveHistory->execute();
-                $saveHistory->close();
-
-                // Update to new password + set timestamp
-                $updateFields[] = "Password = ?";
-                $types .= 's';
-                $params[] = password_hash($newPassword, PASSWORD_DEFAULT);
-
-                $updateFields[] = "LastPasswordChange = NOW()";
+                $error_message = "❌ Failed to update password. Please try again.";
             }
         }
     }
 }
 // ---------------- END PASSWORD SECTION ----------------
+
 
     // Perform update if valid
     if (!empty($updateFields) && !isset($error_message)) {
@@ -471,6 +486,7 @@ $stmt->close();
                             <input type="text" name="editFirstName" value="<?= htmlspecialchars($firstName) ?>" placeholder="First name">
                             <input type="text" name="editLastName" value="<?= htmlspecialchars($lastName) ?>" placeholder="Last name">
                             <input type="email" name="editEmail" value="<?= htmlspecialchars($email) ?>" placeholder="Email">
+                            <input type="password" name="currentPassword" placeholder="Current Password" required>
                             <input type="password" name="editPassword" placeholder="New Password">
                             <input type="password" name="editPasswordConfirm" placeholder="Confirm Password">
                             <button type="submit" name="saveAccountEdit">Save</button>
