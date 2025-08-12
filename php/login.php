@@ -17,7 +17,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn = new mysqli("localhost", "root", "", "dbadm");
         if ($conn->connect_error) {
             error_log("DB Connection failed: " . $conn->connect_error);
-            $error_message = "Service temporarily unavailable. Please try again later.";
+            header("Location: /error_pages/maintenance.php");
+            exit();
         } else {
 
           $logger = new SecurityLogger($conn);
@@ -52,6 +53,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Locked account handling: record attempt and show generic locked message
             if ($user && $lockoutUntil && strtotime($lockoutUntil) > time()) {
+              
+              header("Location: /error_pages/account_locked.php");
+              exit();
+
               // Record unsuccessful attempt
                 $upd = $conn->prepare("UPDATE USERS SET LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
                 $upd->bind_param("sss", $now, $ip, $email_prefill);

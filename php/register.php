@@ -90,6 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (!$stmt) {
         die("SQL Error: " . $conn->error);
+        header("Location: /error_pages/general_error.php");
+        exit();
     }
 
     $stmt->bind_param("ssssssss", $userID, $firstName, $lastName, $password, $email, $role, $security_question, $security_answer_hash);
@@ -98,7 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         header("Location: login.php");
         exit();
     } else {
-        echo "<h3>Registration failed. Please try again.</h3>"; // Generic fail (#2)
+      error_log("Registration failed for email: $email");
+      header("Location: /error_pages/general_error.php");
+      exit();
     }
 
     $stmt->close();
