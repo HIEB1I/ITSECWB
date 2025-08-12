@@ -19,100 +19,132 @@ $error = '';
 $user = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $firstName = $_POST['firstName'];
-    $lastName  = $_POST['lastName'];
-    $email     = $_POST['email'];
-    $address   = $_POST['address'];
-    $passwordPlain = $_POST['password'] ?? '';
-    $role      = $_POST['role'];
-    $joined    = $_POST['joined'];
+  $firstName = $_POST['firstName'];
+  $lastName  = $_POST['lastName'];
+  $email     = $_POST['email'];
+  $address   = $_POST['address'];
+  $passwordPlain = $_POST['password'] ?? '';
+  $role      = $_POST['role'];
+  $joined    = $_POST['joined'];
 
-    // Get current password info
-    $dateStmt = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
-    $dateStmt->bind_param('s', $userID);
-    $dateStmt->execute();
-    $currentData = $dateStmt->get_result()->fetch_assoc();
-    $dateStmt->close();
+  // Validation
+  $errors = [];
 
-    $updateFields = ["FirstName = ?", "LastName = ?", "Email = ?", "Address = ?", "Role = ?", "Created_At = ?"];
-    $types = "ssssss";
-    $params = [$firstName, $lastName, $email, $address, $role, $joined];
+  if (!validateString($firstName, 2, 50)) {
+    $errors[] = "First name must be between 2 and 50 characters.";
+    $logger->logInputValidationFailure("FirstName", "Length between 2 and 50", $firstName);
+  }
+  if (!validateString($lastName, 2, 50)) {
+    $errors[] = "Last name must be between 2 and 50 characters.";
+    $logger->logInputValidationFailure("LastName", "Length between 2 and 50", $lastName);
+  }
+  if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+    $errors[] = "Invalid email format.";
+    $logger->logInputValidationFailure("Email", "Valid email format", $email);
+  }
+  if (!validateString($address, 10, 200)) {
+    $errors[] = "Address must be between 10 and 200 characters.";
+    $logger->logInputValidationFailure("Address", "Length between 10 and 200", $address);
+  }
 
-    // Only check password rules if admin entered a new password
-    if (!empty($passwordPlain)) {
-        $minLength = 8;
-        if (
-            strlen($passwordPlain) < $minLength ||
-            !preg_match('/[A-Z]/', $passwordPlain) ||
-            !preg_match('/[a-z]/', $passwordPlain) ||
-            !preg_match('/[0-9]/', $passwordPlain) ||
-            !preg_match('/[\W]/', $passwordPlain)
-        ) {
-            die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
-        }
+  // Get current password info
+  $dateStmt = $conn->prepare("SELECT Password, LastPasswordChange FROM USERS WHERE userID = ?");
+  $dateStmt->bind_param('s', $userID);
+  $dateStmt->execute();
+  $currentData = $dateStmt->get_result()->fetch_assoc();
+  $dateStmt->close();
 
-        // Check if changed in the last 1 minute
-        if (!empty($currentData['LastPasswordChange'])) {
-            $lastChangeTime = strtotime($currentData['LastPasswordChange']);
-            $nowTime = time();
-            if (($nowTime - $lastChangeTime) < 60) {
-                die("❌ You can change the password again in 1 minute.");
-            }
-        }
+  $updateFields = ["FirstName = ?", "LastName = ?", "Email = ?", "Address = ?", "Role = ?", "Created_At = ?"];
+  $types = "ssssss";
+  $params = [$firstName, $lastName, $email, $address, $role, $joined];
 
-        // Prevent password reuse
-        $reuseFound = false;
-        $historyStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
-        $historyStmt->bind_param('s', $userID);
-        $historyStmt->execute();
-        $historyResult = $historyStmt->get_result();
-        while ($row = $historyResult->fetch_assoc()) {
-            if (password_verify($passwordPlain, $row['PasswordHash'])) {
-                $reuseFound = true;
-                break;
-            }
-        }
-        $historyStmt->close();
-
-        if ($reuseFound || password_verify($passwordPlain, $currentData['Password'])) {
-            die("❌ You cannot reuse any previous password.");
-        }
-
-        // Save current password to history
-        $saveHistory = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
-        $saveHistory->bind_param('ss', $userID, $currentData['Password']);
-        $saveHistory->execute();
-        $saveHistory->close();
-
-        // Add new password to update
-        $updateFields[] = "Password = ?";
-        $types .= "s";
-        $params[] = password_hash($passwordPlain, PASSWORD_DEFAULT);
-
-        $updateFields[] = "LastPasswordChange = NOW()";
+  // Only check password rules if admin entered a new password
+  if (!empty($passwordPlain)) {
+    $minLength = 8;
+    if (
+      strlen($passwordPlain) < $minLength ||
+      !preg_match('/[A-Z]/', $passwordPlain) ||
+      !preg_match('/[a-z]/', $passwordPlain) ||
+      !preg_match('/[0-9]/', $passwordPlain) ||
+      !preg_match('/[\W]/', $passwordPlain)
+    ) {
+      die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
     }
 
-    // Build query
+    // Check if changed in the last 1 minute
+    if (!empty($currentData['LastPasswordChange'])) {
+      $lastChangeTime = strtotime($currentData['LastPasswordChange']);
+      $nowTime = time();
+      if (($nowTime - $lastChangeTime) < 60) {
+        die("❌ You can change the password again in 1 minute.");
+      }
+    }
+
+    // Prevent password reuse
+    $reuseFound = false;
+    $historyStmt = $conn->prepare("SELECT PasswordHash FROM USER_PASSWORD_HISTORY WHERE userID = ?");
+    $historyStmt->bind_param('s', $userID);
+    $historyStmt->execute();
+    $historyResult = $historyStmt->get_result();
+    while ($row = $historyResult->fetch_assoc()) {
+      if (password_verify($passwordPlain, $row['PasswordHash'])) {
+        $reuseFound = true;
+        break;
+      }
+    }
+    $historyStmt->close();
+
+    if ($reuseFound || password_verify($passwordPlain, $currentData['Password'])) {
+      die("❌ You cannot reuse any previous password.");
+    }
+
+    // Save current password to history
+    $saveHistory = $conn->prepare("INSERT INTO USER_PASSWORD_HISTORY (userID, PasswordHash) VALUES (?, ?)");
+    $saveHistory->bind_param('ss', $userID, $currentData['Password']);
+    $saveHistory->execute();
+    $saveHistory->close();
+
+    // Add new password to update
+    $updateFields[] = "Password = ?";
     $types .= "s";
-    $params[] = $userID;
-    $sql = "UPDATE USERS SET " . implode(", ", $updateFields) . " WHERE userID = ?";
-    $stmt = $conn->prepare($sql);
+    $params[] = password_hash($passwordPlain, PASSWORD_DEFAULT);
 
-    if ($stmt) {
-        $bindParams = array_merge([$types], $params);
-        foreach ($bindParams as $key => $value) {
-            $refs[$key] = &$bindParams[$key];
-        }
-        call_user_func_array([$stmt, 'bind_param'], $refs);
+    $updateFields[] = "LastPasswordChange = NOW()";
+  }
 
-        if ($stmt->execute()) {
-            header("Location: ADMIN_ManageUsers.php");
-            exit();
-        } else {
-            $error = "Failed to update user.";
-        }
-        $stmt->close();
+  if (!empty($errors)) {
+    $_SESSION['errors'] = $errors;
+    header("Location: ADMIN_EditUser.php?userID=" . urlencode($userID));
+    exit();
+  }
+
+  // Build query
+  $types .= "s";
+  $params[] = $userID;
+  $sql = "UPDATE USERS SET " . implode(", ", $updateFields) . " WHERE userID = ?";
+  $stmt = $conn->prepare($sql);
+
+  if ($stmt) {
+    $bindParams = array_merge([$types], $params);
+    foreach ($bindParams as $key => $value) {
+      $refs[$key] = &$bindParams[$key];
     }
+    call_user_func_array([$stmt, 'bind_param'], $refs);
+
+    if ($stmt->execute()) {
+      $logger->logEvent(
+        'APPLICATION_SUCCESS',
+        "User updated successfully: {$userID} ~ {$firstName} {$lastName}",
+        $_SESSION['user_id'] ?? null,
+        $_SESSION['role'] ?? null
+      );
+      header("Location: ADMIN_ManageUsers.php");
+      exit();
+    } else {
+      $error = "Failed to update user.";
+    }
+    $stmt->close();
+  }
 }
 
 // Fetch user data
