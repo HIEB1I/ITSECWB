@@ -41,6 +41,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 
     $role = 'Customer';
+    
+    // DATA VALIDATION: validation checks & compile
+    $errors = [];
+
+    if (!validateString($firstName, 1, 50)) {
+        $errors[] = "First name must be between 1 and 50 characters.";
+    }
+    if (!validateString($lastName, 1, 50)) {
+        $errors[] = "Last name must be between 1 and 50 characters.";
+    }
+
+    if (!empty($errors)) {
+      $_SESSION['errors'] = $errors;
+      header("Location: register.php");
+      exit;
+    }
 
     $stmt = $conn->prepare("INSERT INTO USERS (userID, FirstName, LastName, Password, Email, Role) VALUES (?, ?, ?, ?, ?, ?)");
     $stmt->bind_param("ssssss", $userID, $firstName, $lastName, $password, $email, $role);
