@@ -96,6 +96,8 @@ $imageBase64 = $product['Image'] ? 'data:image/jpeg;base64,' . base64_encode($pr
     <a href="ADMIN_Browse.php">Browse</a>
     <h4>ACCOUNT</h4>
     <a href="ADMIN_ManageUsers.php">Manage Users</a>
+    <h4>LOGS</h4>
+    <a href="ADMIN_SecurityLogs.php">Security Logs</a>
   </div>
   <div class="logout">
     <i class="fa-solid fa-right-from-bracket"></i>

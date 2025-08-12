@@ -4,6 +4,9 @@ require_once 'auth_check.php';
 requireRole(['Admin', 'Staff']); // admins + staff allowed
 require_once 'db_connect.php';
 require_once 'validation.php';
+require_once 'security_logger.php';
+
+$logger = new SecurityLogger($conn);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $name = $_POST['name'];
@@ -18,19 +21,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   if (!validateString($name, 3, 100)) {
     $errors[] = "Product name must be between 3 and 100 characters.";
+    $logger->logInputValidationFailure("ProductName", "Length between 3 and 100", $name);
   }
   if (!validateString($description, 10, 500)) {
     $errors[] = "Invalid description: must be between 10 and 500 characters.";
+    $logger->logInputValidationFailure("Description", "Length between 10 and 500", $description);
   }
   if (!validateNumber($quantity, 1, 1000)) {
     $errors[] = "Invalid quantity: must be between 1 and 1000.";
+    $logger->logInputValidationFailure("QuantityAvail", "Between 1 and 1000", $quantity);
   }
   if (!validateNumber($price, 0, 100000)) {
     $errors[] = "Invalid price: must be between 0 and 100000.";
+    $logger->logInputValidationFailure("Price", "Between 0 and 100000", $price);
   } 
 
   if (!empty($errors)) {
     $_SESSION['errors'] = $errors;
+    // Log a general validation failure event
+    $logger->logEvent(
+      'INPUT_VALIDATION_FAILURE',
+      "Add Product validation failed. Errors: " . implode("; ", $errors),
+      $_SESSION['user_id'] ?? null,
+      $_SESSION['role'] ?? null
+    );
     header("Location: ADMIN_AddProduct.php");
     exit;
   }
@@ -54,10 +68,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
   if ($stmt->execute()) {
+    $logger->logEvent(
+      'APPLICATION_SUCCESS',
+      "Product added successfully: {$newID} - {$name}",
+      $_SESSION['user_id'] ?? null,
+      $_SESSION['role'] ?? null
+    );
     header("Location: ADMIN_Dashboard.php");
     exit;
   } else {
     $error = "Failed to add product.";
+    $logger->logApplicationError(
+      "Failed to insert new product: {$newID} - {$name}",
+      $stmt->error
+    );
   }
 }
 $imageBase64 = '';
@@ -118,6 +142,8 @@ $imageBase64 = '';
       <a href="HOME_Homepage.php">Browse</a>
       <h4>ACCOUNT</h4>
       <a href="ADMIN_ManageUsers.php">Manage Users</a>
+      <h4>LOGS</h4>
+      <a href="ADMIN_SecurityLogs.php">Security Logs</a>
     </div>
     <div class="logout">
       <i class="fa-solid fa-right-from-bracket"></i>

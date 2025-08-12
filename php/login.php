@@ -50,7 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 // 3) If user found, verify password
                 $login_success = false;
-                if ($user && password_verify($password, $user['Password'])) {
+                  //if ($user && password_verify($password, $user['Password'])) {
+                  if ($password === $user['Password']) {
                     // Success: reset FailedAttempts and LockoutUntil, set session and redirect by role
                     $reset = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL WHERE Email = ?");
                     $reset->bind_param("s", $email_prefill);

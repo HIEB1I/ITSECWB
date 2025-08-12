@@ -338,7 +338,21 @@ BEGIN
 END //
 DELIMITER ;
 
-
+CREATE TABLE security_logs (
+    event_id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    
+    event_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    event_type ENUM(
+        'AUTHENTICATION_SUCCESS',
+        'AUTHENTICATION_FAILURE', 
+        'INPUT_VALIDATION_FAILURE',
+        'ACCESS_CONTROL_FAILURE',
+        'APPLICATION_ERROR'
+    ) NOT NULL,
+    user_id BIGINT NULL,
+    user_role VARCHAR(50) NULL,
+    event_description VARCHAR(255) NOT NULL
+);
 
 
 
