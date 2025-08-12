@@ -1,3 +1,4 @@
+db_connect.php
 <?php
 // Ensure session exists before role check
 if (session_status() === PHP_SESSION_NONE) {
@@ -21,14 +22,14 @@ if (isset($_SESSION['role'])) {
             $db_user = "customer_user";
             break;
         default:
-            exit("Access denied."); 
+            exit("Access denied."); // (REQ #2)
     }
 } else { 
-     // Allow public access only to register.php
-    if (basename($_SERVER['PHP_SELF']) === 'register.php') {
-        $db_user = "public_user"; // low privilege user for registration
+    // Allow public access to register.php and forgot_password.php
+    if (in_array(basename($_SERVER['PHP_SELF']), ['register.php', 'forgot_password.php'])) {
+        $db_user = "public_user"; // Low-privilege user
     } else {
-        exit("Access denied.");
+        exit("Access denied."); // (REQ #2)
     }
 }
 
@@ -37,6 +38,6 @@ $conn = new mysqli($host, $db_user, "", $dbname);
 // Fail securely if DB connection fails
 if ($conn->connect_error) {
     error_log("DB Connection failed: " . $conn->connect_error); // Log internally
-    exit("Service unavailable."); 
+    exit("Service unavailable."); // (REQ #2)
 }
 ?>

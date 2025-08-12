@@ -1,107 +1,112 @@
+login.php
 <?php
 session_start();
 
-date_default_timezone_set('Asia/Manila');
-
-// default message container and prefill
+// Default vars
 $error_message = '';
 $email_prefill = '';
 
-// POST handler
+// Handle POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get inputs (trim email)
     $email_prefill = trim($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
 
-    // Basic required-field check (visible error)
     if ($email_prefill === '' || $password === '') {
         $error_message = "❌ Please fill in both email and password.";
     } else {
-        // Connect to DB (use proper credentials)
         $conn = new mysqli("localhost", "root", "", "dbadm");
         if ($conn->connect_error) {
             error_log("DB Connection failed: " . $conn->connect_error);
-            // fail securely
             $error_message = "Service temporarily unavailable. Please try again later.";
         } else {
-
-            // 1) Attempt to look up the user by email (we'll use the returned fields if user exists)
+            // Fetch user with login history
             $stmt = $conn->prepare("
-                SELECT userID, Password, Role, FailedAttempts, LockoutUntil
+                SELECT userID, Password, Role, FailedAttempts, LockoutUntil,
+                       LastLogin, LastLoginIP, LastFailedLogin, LastFailedIP
                 FROM USERS
                 WHERE Email = ?
             ");
             $stmt->bind_param("s", $email_prefill);
             $stmt->execute();
             $result = $stmt->get_result();
-            $user = $result->fetch_assoc(); // null if not found
+            $user = $result->fetch_assoc();
             $stmt->close();
 
-            // Initialize these so they exist in all code paths
-            $failedAttempts = 0;
-            $lockoutUntil = null;
+            $failedAttempts = $user['FailedAttempts'] ?? 0;
+            $lockoutUntil = $user['LockoutUntil'] ?? null;
 
-            if ($user) {
-                $failedAttempts = (int)$user['FailedAttempts'];
-                $lockoutUntil = $user['LockoutUntil'];
-            }
-
-            // 2) Check lockout (if user exists). If locked, show generic locked message.
+            // Lockout check
             if ($user && $lockoutUntil && strtotime($lockoutUntil) > time()) {
                 $error_message = "❌ Account locked due to multiple failed login attempts. Try again later.";
             } else {
-                // 3) If user found, verify password
-                $login_success = false;
                 if ($user && password_verify($password, $user['Password'])) {
-                 // if ($password === $user['Password']) {{
-                    // Success: reset FailedAttempts and LockoutUntil, set session and redirect by role
-                    $reset = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL WHERE Email = ?");
-                    $reset->bind_param("s", $email_prefill);
-                    $reset->execute();
-                    $reset->close();
+                    // Store old login details in session
+                    $_SESSION['prevLastLogin'] = $user['LastLogin'];
+                    $_SESSION['prevLastLoginIP'] = $user['LastLoginIP'];
+                    $_SESSION['prevFailedLogin'] = $user['LastFailedLogin'];
+                    $_SESSION['prevFailedLoginIP'] = $user['LastFailedIP'];
 
-                    // Set session
+                    // Update current login time/IP & reset attempts
+                    $currentIP = $_SERVER['REMOTE_ADDR'];
+                    $upd = $conn->prepare("
+                        UPDATE USERS
+                        SET FailedAttempts = 0,
+                            LockoutUntil = NULL,
+                            LastLogin = NOW(),
+                            LastLoginIP = ?
+                        WHERE Email = ?
+                    ");
+                    $upd->bind_param("ss", $currentIP, $email_prefill);
+                    $upd->execute();
+                    $upd->close();
+
+                    // Set session vars
                     $_SESSION['userID'] = $user['userID'];
                     $_SESSION['role']   = $user['Role'];
 
-                    // Role-based redirect (Admin/Staff -> admin area, Customer -> home)
-                    if ($user['Role'] === 'Admin' || $user['Role'] === 'Staff') {
+                    // Redirect by role
+                    if (in_array($user['Role'], ['Admin', 'Staff'])) {
                         header("Location: ADMIN_Dashboard.php");
-                        exit();
                     } else {
                         header("Location: HOME_Homepage.php");
-                        exit();
                     }
+                    exit();
                 } else {
-                    // 4) Failed login: increment FailedAttempts only if user exists
+                    // Failed login attempt
                     if ($user) {
                         $newAttempts = $failedAttempts + 1;
+                        $currentIP = $_SERVER['REMOTE_ADDR'];
+
+                        // Update failed login time/IP
+                        $failUpd = $conn->prepare("
+                            UPDATE USERS
+                            SET FailedAttempts = ?,
+                                LastFailedLogin = NOW(),
+                                LastFailedIP = ?
+                                " . ($newAttempts >= 5 ? ", LockoutUntil = ?" : "") . "
+                            WHERE Email = ?
+                        ");
+
                         if ($newAttempts >= 5) {
-                            // lock for 1 minute
-                            $newLockout = date("Y-m-d H:i:s", time() + 1 * 60);
-                            $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LockoutUntil = ? WHERE Email = ?");
-                            $upd->bind_param("iss", $newAttempts, $newLockout, $email_prefill);
+                            $lockoutTime = date("Y-m-d H:i:s", time() + 60);
+                            $failUpd->bind_param("isss", $newAttempts, $currentIP, $lockoutTime, $email_prefill);
                         } else {
-                            $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ? WHERE Email = ?");
-                            $upd->bind_param("is", $newAttempts, $email_prefill);
+                            $failUpd->bind_param("iss", $newAttempts, $currentIP, $email_prefill);
                         }
-                        $upd->execute();
-                        $upd->close();
+
+                        $failUpd->execute();
+                        $failUpd->close();
                     } else {
-                        // If no such user, do a dummy password_verify to help avoid timing attacks
-                        // (makes the response time more consistent so attackers can't easily probe existence)
+                        // Dummy hash check for non-existent users
                         password_verify($password, password_hash("fake-password", PASSWORD_DEFAULT));
                     }
-
-                    // Generic error message (Requirement #4)
                     $error_message = "❌ Invalid username and/or password.";
                 }
-            } // end else not locked
-
+            }
             $conn->close();
         }
-    } 
-} 
+    }
+}
 ?>
 
 
@@ -209,7 +214,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <input type="email" name="email" placeholder="Email Address" required>
       <input type="password" name="password" placeholder="Password" required>
       <div style="text-align: left; margin-top: 5px; margin-bottom: 10px;">
-        <a href="#">Forgot Password?</a>
+        <a href="forgot_password.php">Forgot Password?</a>
       </div>
       <button class="sign-in-btn" type="submit">Sign in</button>
     </form>
