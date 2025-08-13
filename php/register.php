@@ -7,111 +7,117 @@ require 'validation.php';
 $sql = "SELECT userID FROM USERS ORDER BY userID DESC LIMIT 1";
 $result = $conn->query($sql);
 if ($result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $lastID = $row['userID'];
-    $num = (int)substr($lastID, 1);
-    $num++;
-    $userID = 'U' . str_pad($num, 5, '0', STR_PAD_LEFT);
+  $row = $result->fetch_assoc();
+  $lastID = $row['userID'];
+  $num = (int)substr($lastID, 1);
+  $num++;
+  $userID = 'U' . str_pad($num, 5, '0', STR_PAD_LEFT);
 } else {
-    $userID = 'U00001';
+  $userID = 'U00001';
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $firstName = trim($_POST['firstName']);
-    $lastName  = trim($_POST['lastName']);
-    $email     = trim($_POST['email']);
-    
-    // Enforce password complexity & length
-    $passwordPlain = $_POST['password'] ?? '';
-    $confirmPasswordPlain = $_POST['confirmPassword'] ?? '';
+  $firstName = trim($_POST['firstName']);
+  $lastName  = trim($_POST['lastName']);
+  $email     = trim($_POST['email']);
 
-    // Check if passwords match
-    if ($passwordPlain !== $confirmPasswordPlain) {
-        die("❌ Passwords do not match.");
-    }
+  // Enforce password complexity & length
+  $passwordPlain = $_POST['password'] ?? '';
+  $confirmPasswordPlain = $_POST['confirmPassword'] ?? '';
 
-    $minLength = 8;
+  // Check if passwords match
+  if ($passwordPlain !== $confirmPasswordPlain) {
+    die("❌ Passwords do not match.");
+  }
 
-    if (
-        strlen($passwordPlain) < $minLength ||
-        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
-        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
-        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
-        !preg_match('/[\W]/', $passwordPlain)      // Special char
-    ) {
-        die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
-    }
-    // Store strong salted hash using password_hash (built-in salt)
+  $minLength = 8;
 
-    // Hash the password (bcrypt with salt automatically handled)
-    $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
+  if (
+    strlen($passwordPlain) < $minLength ||
+    !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
+    !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
+    !preg_match('/[0-9]/', $passwordPlain) ||  // Number
+    !preg_match('/[\W]/', $passwordPlain)      // Special char
+  ) {
+    die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
+  }
+  // Store strong salted hash using password_hash (built-in salt)
 
-    // Security question + answer validation
-    $security_question = trim($_POST['security_question']);
-    $security_answer_plain = trim($_POST['security_answer']);
+  // Hash the password (bcrypt with salt automatically handled)
+  $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
 
-    $common_answers = [
-        "dog", "cat", "blue", "pizza", "the bible", "1234", "password", "qwerty"
-    ];
+  // Security question + answer validation
+  $security_question = trim($_POST['security_question']);
+  $security_answer_plain = trim($_POST['security_answer']);
 
-    if (
-        strlen($security_answer_plain) < 6 ||
-        in_array(strtolower($security_answer_plain), $common_answers) ||
-        ctype_digit($security_answer_plain)
-    ) {
-        die("❌ Security answer is too easy to guess. Try something more unique.");
-    }
+  $common_answers = [
+    "dog", "cat", "blue", "pizza", "the bible", "1234", "password", "qwerty"
+  ];
 
-    // Hash the security answer
-    $security_answer_hash = password_hash($security_answer_plain, PASSWORD_DEFAULT);
+  if (
+    strlen($security_answer_plain) < 6 ||
+    in_array(strtolower($security_answer_plain), $common_answers) ||
+    ctype_digit($security_answer_plain)
+  ) {
+    //("❌ Security answer is too easy to guess. Try something more unique.");
+  }
 
-    $role = 'Customer';
-    
-    // DATA VALIDATION: validation checks & compile
-    $errors = [];
+  // Hash the security answer
+  $security_answer_hash = password_hash($security_answer_plain, PASSWORD_DEFAULT);
 
-    if (!validateString($firstName, 1, 50)) {
-        $errors[] = "First name must be between 1 and 50 characters.";
-    }
-    if (!validateString($lastName, 1, 50)) {
-        $errors[] = "Last name must be between 1 and 50 characters.";
-    }
+  $role = 'Customer';
 
-    if (!empty($errors)) {
-      $_SESSION['errors'] = $errors;
-      header("Location: register.php");
-      exit;
-    }
-    $sql = "INSERT INTO USERS 
+  // DATA VALIDATION: validation checks & compile
+  $errors = [];
+
+  if (!validateString($firstName, 1, 50)) {
+    $errors[] = "First name must be between 1 and 50 characters.";
+  }
+  if (!validateString($lastName, 1, 50)) {
+    $errors[] = "Last name must be between 1 and 50 characters.";
+  }
+
+  if (!empty($errors)) {
+    $_SESSION['errors'] = $errors;
+    header("Location: register.php");
+    exit;
+  }
+  $sql = "INSERT INTO USERS 
             (userID, FirstName, LastName, Password, Email, Role, SecurityQuestion, SecurityAnswerHash) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-            
-    $stmt = $conn->prepare($sql);
 
-    if (!$stmt) {
-        die("SQL Error: " . $conn->error);
-        header("Location: /error_pages/general_error.php");
-        exit();
-    }
+  $stmt = $conn->prepare($sql);
 
-    $stmt->bind_param("ssssssss", $userID, $firstName, $lastName, $password, $email, $role, $security_question, $security_answer_hash);
+  if (!$stmt) {
+    die("SQL Error: " . $conn->error);
+    header("Location: error_pages/general_error.php");
+    exit();
+  }
 
-    if ($stmt->execute()) {
-        header("Location: login.php");
-        exit();
-    } else {
-      error_log("Registration failed for email: $email");
-      header("Location: /error_pages/general_error.php");
-      exit();
-    }
+  $stmt->bind_param("ssssssss", $userID, $firstName, $lastName, $password, $email, $role, $security_question, $security_answer_hash);
 
-    $stmt->close();
-    $conn->close();
+  if ($stmt->execute()) {
+    // LOGGING
+    require_once 'security_logger.php';
+    $logger = new SecurityLogger($conn);
+    $logger->logEvent('APPLICATION_SUCCESS', "Account created successfully for user: $userID", $userID, $role);
+
+    header("Location: login.php");
+    exit();
+  } else {
+    error_log("Registration failed for email: $email");
+    header("Location: /error_pages/general_error.php");
+    exit();
+  }
+
+  $stmt->close();
+  $conn->close();
 }
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Create Account - Clothing Store</title>
@@ -217,23 +223,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
       font-size: 12px;
       text-align: left;
     }
+
     #password-requirements li {
       margin: 4px 0;
     }
+
     .valid {
       color: green;
     }
+
     .invalid {
       color: red;
     }
-    
-    #confirmMessage { font-size: 12px; color: red; display: none; margin-top: 4px; text-align: left; }
 
+    #confirmMessage {
+      font-size: 12px;
+      color: red;
+      display: none;
+      margin-top: 4px;
+      text-align: left;
+    }
   </style>
 </head>
+
 <body>
 
-    <a href="login.php" style="position: absolute; top: 20px; left: 50px; text-decoration: none; font-size: 30px;">←</a>
+  <a href="login.php" style="position: absolute; top: 20px; left: 50px; text-decoration: none; font-size: 30px;">←</a>
 
   <!-- KW Logo -->
   <div class="logo">
@@ -241,49 +256,49 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   </div>
 
   <hr>
-<!-- Signup Form -->
+  <!-- Signup Form -->
   <div class="register-container">
     <h2>Create account</h2>
     <form method="post" action="">
 
-    <!-- DATA VALIDATION: display compiled errors -->
-    <?php if (!empty($_SESSION['errors'])): ?>
-      <ul style="color:red;">
-        <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
-      </ul>
+      <!-- DATA VALIDATION: display compiled errors -->
+      <?php if (!empty($_SESSION['errors'])) : ?>
+        <ul style="color:red;">
+          <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
+        </ul>
         <?php unset($_SESSION['errors']); ?>
-    <?php endif; ?>
-    
+      <?php endif; ?>
+
       <input type="text" name="firstName" placeholder="First Name" required>
       <input type="text" name="lastName" placeholder="Last Name" required>
       <input type="email" name="email" placeholder="Email Address" required>
-      
+
       <input type="password" id="password" name="password" placeholder="Password" required>
       <ul id="password-requirements">
-          <li id="req-length" class="invalid">❌ At least 8 characters</li>
-          <li id="req-max" class="invalid">❌ No more than 120 characters</li>
-          <li id="req-upper" class="invalid">❌ At least one uppercase letter</li>
-          <li id="req-lower" class="invalid">❌ At least one lowercase letter</li>
-          <li id="req-number" class="invalid">❌ At least one number (0–9)</li>
-          <li id="req-special" class="invalid">❌ At least one special character (!@#$%^&*)</li>
+        <li id="req-length" class="invalid">❌ At least 8 characters</li>
+        <li id="req-max" class="invalid">❌ No more than 120 characters</li>
+        <li id="req-upper" class="invalid">❌ At least one uppercase letter</li>
+        <li id="req-lower" class="invalid">❌ At least one lowercase letter</li>
+        <li id="req-number" class="invalid">❌ At least one number (0–9)</li>
+        <li id="req-special" class="invalid">❌ At least one special character (!@#$%^&*)</li>
       </ul>
-      
+
       <!-- Confirm password field -->
       <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm Password" required>
       <div id="confirmMessage">❌ Passwords do not match</div>
 
       <select name="security_question" required>
-          <option value="">-- Select a Security Question --</option>
-          <option value="favorite_snack_child">What was your favorite snack or candy as a child?</option>
-          <option value="elementary_school_name">What was the name of your elementary school?</option>
-          <option value="favorite_board_game_child">What was the name of your favorite board game growing up?</option>
-          <option value="favorite_singer">Who is your favorite singer?</option>
-          <option value="favorite_tv_show">What is the name of your favorite TV show?</option>
-          <option value="first_crush_fullname">What is the full name of the first person you had a crush on?</option>
+        <option value="">-- Select a Security Question --</option>
+        <option value="favorite_snack_child">What was your favorite snack or candy as a child?</option>
+        <option value="elementary_school_name">What was the name of your elementary school?</option>
+        <option value="favorite_board_game_child">What was the name of your favorite board game growing up?</option>
+        <option value="favorite_singer">Who is your favorite singer?</option>
+        <option value="favorite_tv_show">What is the name of your favorite TV show?</option>
+        <option value="first_crush_fullname">What is the full name of the first person you had a crush on?</option>
       </select>
 
       <input type="text" name="security_answer" placeholder="Security Answer" required>
-      
+
       <button class="create-btn" type="submit">Create</button>
     </form>
   </div>
@@ -296,57 +311,58 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <img src="../Logos/Daily Logo.png" alt="Daily Flight">
   </div>
 
-<script>
-const passwordInput = document.getElementById('password');
-const confirmInput = document.getElementById('confirmPassword');
-const confirmMessage = document.getElementById('confirmMessage');
+  <script>
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirmPassword');
+    const confirmMessage = document.getElementById('confirmMessage');
 
-const requirements = {
-    length: document.getElementById('req-length'),
-    max: document.getElementById('req-max'),
-    upper: document.getElementById('req-upper'),
-    lower: document.getElementById('req-lower'),
-    number: document.getElementById('req-number'),
-    special: document.getElementById('req-special')
-};
+    const requirements = {
+      length: document.getElementById('req-length'),
+      max: document.getElementById('req-max'),
+      upper: document.getElementById('req-upper'),
+      lower: document.getElementById('req-lower'),
+      number: document.getElementById('req-number'),
+      special: document.getElementById('req-special')
+    };
 
-// Check password requirements
-passwordInput.addEventListener('input', function () {
-    const value = passwordInput.value;
+    // Check password requirements
+    passwordInput.addEventListener('input', function() {
+      const value = passwordInput.value;
 
-    requirements.length.className = value.length >= 8 ? 'valid' : 'invalid';
-    requirements.max.className = value.length <= 120 ? 'valid' : 'invalid';
-    requirements.upper.className = /[A-Z]/.test(value) ? 'valid' : 'invalid';
-    requirements.lower.className = /[a-z]/.test(value) ? 'valid' : 'invalid';
-    requirements.number.className = /\d/.test(value) ? 'valid' : 'invalid';
-    requirements.special.className = /[!@#$%^&*]/.test(value) ? 'valid' : 'invalid';
+      requirements.length.className = value.length >= 8 ? 'valid' : 'invalid';
+      requirements.max.className = value.length <= 120 ? 'valid' : 'invalid';
+      requirements.upper.className = /[A-Z]/.test(value) ? 'valid' : 'invalid';
+      requirements.lower.className = /[a-z]/.test(value) ? 'valid' : 'invalid';
+      requirements.number.className = /\d/.test(value) ? 'valid' : 'invalid';
+      requirements.special.className = /[!@#$%^&*]/.test(value) ? 'valid' : 'invalid';
 
-    // Update icons
-    for (let key in requirements) {
+      // Update icons
+      for (let key in requirements) {
         if (requirements[key].className === 'valid') {
-            requirements[key].textContent = '✅ ' + requirements[key].textContent.replace('❌ ', '').replace('✅ ', '');
+          requirements[key].textContent = '✅ ' + requirements[key].textContent.replace('❌ ', '').replace('✅ ', '');
         } else {
-            requirements[key].textContent = '❌ ' + requirements[key].textContent.replace('✅ ', '').replace('❌ ', '');
+          requirements[key].textContent = '❌ ' + requirements[key].textContent.replace('✅ ', '').replace('❌ ', '');
         }
-    }
+      }
 
-    checkMatch();
-});
+      checkMatch();
+    });
 
-// Check confirm password match
-confirmInput.addEventListener('input', checkMatch);
+    // Check confirm password match
+    confirmInput.addEventListener('input', checkMatch);
 
-function checkMatch() {
-    if (confirmInput.value.length === 0) {
+    function checkMatch() {
+      if (confirmInput.value.length === 0) {
         confirmMessage.style.display = 'none';
         return;
-    }
-    if (confirmInput.value === passwordInput.value) {
+      }
+      if (confirmInput.value === passwordInput.value) {
         confirmMessage.style.display = 'none';
-    } else {
+      } else {
         confirmMessage.style.display = 'block';
+      }
     }
-}
-</script>
+  </script>
 </body>
+
 </html>

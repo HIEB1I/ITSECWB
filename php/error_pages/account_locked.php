@@ -52,7 +52,7 @@
     <div class="container">
         <h1>Account Locked</h1>
         <p>Access temporarily restricted.</p>
-        <a href="javascript:history.back()" class="btn">Back</a>
+        <a href="../login.php" class="btn">Back</a>
     </div>
 </body>
 </html>

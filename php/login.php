@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn = new mysqli("localhost", "root", "", "dbadm");
         if ($conn->connect_error) {
             error_log("DB Connection failed: " . $conn->connect_error);
-            header("Location: /error_pages/maintenance.php");
+            header("Location: error_pages/maintenance.php");
             exit();
         } else {
 
@@ -53,10 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Locked account handling: record attempt and show generic locked message
             if ($user && $lockoutUntil && strtotime($lockoutUntil) > time()) {
-              
-              header("Location: /error_pages/account_locked.php");
-              exit();
-
               // Record unsuccessful attempt
                 $upd = $conn->prepare("UPDATE USERS SET LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
                 $upd->bind_param("sss", $now, $ip, $email_prefill);
@@ -66,10 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // LOGGING: unsucessful
                 $logger->logAuthFailure("Login attempt on locked account", $email_prefill);
 
-                $error_message = "❌ Account locked due to multiple failed login attempts. Try again later.";
+                header("Location: error_pages/account_locked.php");
+                exit();
             } else {
                 // Password verification
-                if ($user && password_verify($password, $user['Password'])) {
+                // if ($user && password_verify($password, $user['Password'])) {
+                if ($password === $user['Password']) {
                     // Successful login — reset counters
                     $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'successful' WHERE Email = ?");
                     $upd->bind_param("sss", $now, $ip, $email_prefill);
@@ -77,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $upd->close();
                       
                     // LOGGING: sucessful
-                    $logger->logAuthSuccess($user['userID'], $user['Role'], "User logged in successfully from IP: " . $ip);
+                    $logger->logAuthSuccess($user['userID'], $user['Role'], "User logged in successfully.");
 
                     // Set session for logged-in user
                     $_SESSION['userID'] = $user['userID'];
@@ -110,15 +108,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $newLockout = date("Y-m-d H:i:s", time() + 60); // 1 minute
                             $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LockoutUntil = ?, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
                             $upd->bind_param("issss", $newAttempts, $newLockout, $now, $ip, $email_prefill);
+                            $logger->logAuthFailure("Account locked after $newAttempts failed attempts", $email_prefill);
                         } else {
                             $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
                             $upd->bind_param("isss", $newAttempts, $now, $ip, $email_prefill);
                         }
                         $upd->execute();
                         $upd->close();
+                        $logger->logAuthFailure("Invalid password attempt: ($newAttempts/5).", $email_prefill);
                     } else {
                         // Dummy verify to even out timing
                         password_verify($password, password_hash("fake-password", PASSWORD_DEFAULT));
+                        $logger->logAuthFailure("Login attempt with non-existent email", $email_prefill);
                     }
                     $error_message = "❌ Invalid username and/or password.";
                 }

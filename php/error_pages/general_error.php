@@ -52,7 +52,7 @@
     <div class="container">
         <h1>Error</h1>
         <p>Something went wrong.</p>
-        <a href="javascript:history.back()" class="btn">Back</a>
+        <a href="../login.php" class="btn">Back</a>
     </div>
 </body>
 </html>

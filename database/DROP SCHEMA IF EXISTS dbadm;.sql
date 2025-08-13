@@ -363,7 +363,7 @@ CREATE TABLE security_logs (
 	      'APPLICATION_SUCCESS',
         'APPLICATION_ERROR'
     ) NOT NULL,
-    user_id BIGINT NULL,
+    user_id VARCHAR(10) NULL,
     user_role ENUM('Customer', 'Staff', 'Admin') NULL,
     event_description VARCHAR(255) NOT NULL
 );

@@ -12,9 +12,9 @@ class SecurityLogger {
     public function logEvent($event_type, $description, $user_id = null, $user_role = null) {
         try {        
            // Get user info from session if not provided
-            if (session_status() === PHP_SESSION_ACTIVE) {
-                if ($user_id === null && isset($_SESSION['user_id'])) {
-                    $user_id = $_SESSION['user_id'];
+            if (session_status() === PHP_SESSION_ACTIVE && $event_type !== 'AUTHENTICATION_FAILURE') {
+                if ($user_id === null && isset($_SESSION['userID'])) {
+                    $user_id = $_SESSION['userID'];
                 }
                 if ($user_role === null && isset($_SESSION['role'])) {
                     $user_role = $_SESSION['role'];
@@ -38,7 +38,7 @@ class SecurityLogger {
                 return false;
             }
             
-            $stmt->bind_param("siss", $event_type, $user_id, $user_role, $description);
+            $stmt->bind_param("ssss", $event_type, $user_id, $user_role, $description);
             $result = $stmt->execute();
             
             if (!$result) {
@@ -67,10 +67,32 @@ class SecurityLogger {
     public function logAuthFailure($description, $attempted_username = null) {
         $full_description = $description;
         if ($attempted_username) {
-            // Don't log full username for security, just indicate attempt
             $full_description .= " (Username attempted: " . substr($attempted_username, 0, 3) . "****)";
         }
-        return $this->logEvent('AUTHENTICATION_FAILURE', $full_description);
+        
+        try {
+            // Direct insert - completely bypass logEvent to avoid session override
+            $stmt = $this->conn->prepare("
+                INSERT INTO {$this->log_table} 
+                (event_type, user_id, user_role, event_description) 
+                VALUES (?, NULL, NULL, ?)
+            ");
+            
+            if (!$stmt) {
+                error_log("Failed to prepare logging statement: " . $this->conn->error);
+                return false;
+            }
+            
+            $event_type = 'AUTHENTICATION_FAILURE';
+            $stmt->bind_param("ss", $event_type, $full_description);
+            $result = $stmt->execute();
+            $stmt->close();
+            
+            return $result;
+        } catch (Exception $e) {
+            error_log("Security logging exception: " . $e->getMessage());
+            return false;
+        }
     }
     
     /**

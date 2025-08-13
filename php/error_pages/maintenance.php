@@ -51,7 +51,7 @@
     <div class="container">
         <h1>Maintenance</h1>
         <p>Service temporarily unavailable.</p>
-        <a href="javascript:history.back()" class="btn">Back</a>
+        <a href="../login.php" class="btn">Back</a>
     </div>
 </body>
 </html>
