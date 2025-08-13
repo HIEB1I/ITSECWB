@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $errors[] = "Invalid email format.";
     $logger->logInputValidationFailure("Email", "Valid email format", $email);
   }
-  if (!validateString($address, 10, 200)) {
+  if (!empty(trim($address)) && !validateString($address, 10, 200)) {
     $errors[] = "Address must be between 10 and 200 characters.";
     $logger->logInputValidationFailure("Address", "Length between 10 and 200", $address);
   }
@@ -366,10 +366,10 @@ if (!$user) {
         <input type="email" id="email" name="email" value="<?= htmlspecialchars($user['Email']) ?>" required>
 
         <label for="address">Address:</label>
-        <input type="text" id="address" name="address" value="<?= htmlspecialchars($user['Address']) ?>" required>
+        <input type="text" id="address" name="address" value="<?= htmlspecialchars($user['Address']) ?>">
 
         <label for="password">Password:</label>
-        <input type="password" id="password" name="password" value="<?= htmlspecialchars($user['Password']) ?>" required>
+        <input type="password" id="password" name="password" value="<?= htmlspecialchars($user['Password']) ?>">
 
         <label for="role">Role:</label>
         <select id="role" name="role" required>
