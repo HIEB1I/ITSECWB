@@ -291,8 +291,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <option value="favorite_snack_child">What was your favorite snack or candy as a child?</option>
         <option value="elementary_school_name">What was the name of your elementary school?</option>
         <option value="favorite_board_game_child">What was the name of your favorite board game growing up?</option>
-        <option value="favorite_singer">Who is your favorite singer?</option>
-        <option value="favorite_tv_show">What is the name of your favorite TV show?</option>
+        <option value="nickname">What is the nickname only your family calls you?</option>
+        <option value="first_stuff_animal">What was the name of your first stuffed animal?</option>
         <option value="first_crush_fullname">What is the full name of the first person you had a crush on?</option>
       </select>
 
