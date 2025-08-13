@@ -10,35 +10,6 @@ if (!isset($_SESSION['userID'])) {
     exit();
 }
 
-if (isset($_SESSION['prevLastAttempt'], $_SESSION['prevLastStatus'])) {
-    $prevTime   = $_SESSION['prevLastAttempt'];
-    $prevStatus = $_SESSION['prevLastStatus'];
-
-    if ($prevTime) {
-        $formattedTime = date("F j, Y, g:i a", strtotime($prevTime));
-        $bgColor = ($prevStatus === 'successful') ? '#d4edda' : '#f8d7da';
-        $borderColor = ($prevStatus === 'successful') ? '#28a745' : '#dc3545';
-        $icon = ($prevStatus === 'successful') ? '✔️' : '❌';
-        $message = ($prevStatus === 'successful')
-            ? "Last successful login: $formattedTime"
-            : "Last unsuccessful login attempt: $formattedTime";
-
-        echo "<div style='
-                background-color: {$bgColor};
-                border: 1px solid {$borderColor};
-                padding: 10px 15px;
-                margin: 10px 0;
-                border-radius: 6px;
-                font-family: Arial, sans-serif;
-                color: #333;
-                display: inline-block;
-              '>
-                <strong>{$icon} {$message}</strong>
-              </div>";
-    }
-
-    unset($_SESSION['prevLastAttempt'], $_SESSION['prevLastStatus']);
-}
 ?>
 
 <!DOCTYPE html>
@@ -200,6 +171,38 @@ if (isset($_SESSION['prevLastAttempt'], $_SESSION['prevLastStatus'])) {
 
     <main>
       <h2>Welcome back!</h2>
+         <?php
+    if (isset($_SESSION['prevLastAttempt'], $_SESSION['prevLastStatus'])) {
+        $prevTime   = $_SESSION['prevLastAttempt'];
+        $prevStatus = $_SESSION['prevLastStatus'];
+
+        if ($prevTime) {
+            $formattedTime = date("F j, Y, g:i a", strtotime($prevTime));
+            $bgColor = ($prevStatus === 'successful') ? '#d4edda' : '#f8d7da';
+            $borderColor = ($prevStatus === 'successful') ? '#28a745' : '#dc3545';
+            $icon = ($prevStatus === 'successful') ? '✔️' : '❌';
+            $message = ($prevStatus === 'successful')
+                ? "Last successful login: $formattedTime"
+                : "Last unsuccessful login attempt: $formattedTime";
+
+            echo "<div style='text-align: center; margin: 10px 0;'>
+                    <div style=\"
+                        background-color: {$bgColor};
+                        border: 1px solid {$borderColor};
+                        padding: 10px 15px;
+                        border-radius: 6px;
+                        font-family: Arial, sans-serif;
+                        color: #333;
+                        display: inline-block;
+                    \">
+                        <strong>{$icon} {$message}</strong>
+                    </div>
+                  </div>";
+        }
+
+        unset($_SESSION['prevLastAttempt'], $_SESSION['prevLastStatus']);
+    }
+    ?>
 <div class="history-buttons">
       <a href="ADMIN_Delete_History.php"><button>View Delete History</button></a>
       <a href="ADMIN_Edit_History.php"><button>View Edit History</button></a>
