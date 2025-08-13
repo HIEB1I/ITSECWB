@@ -68,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Password verification
                 if ($user && password_verify($password, $user['Password'])) {
                 // if ($password === $user['Password']) {
-                //if ($user && password_verify($password, $user['Password'])) {
                 if ($password === $user['Password']) {
                     // Successful login — reset counters
                     $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'successful' WHERE Email = ?");
@@ -158,6 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $conn->close();
         }
     }
+}
 }
 ?>
 
