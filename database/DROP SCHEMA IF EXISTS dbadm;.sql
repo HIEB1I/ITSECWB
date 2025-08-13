@@ -447,8 +447,10 @@ CREATE USER 'public_user'@'localhost';
 GRANT SELECT (userID, Email) ON dbadm.USERS TO 'public_user'@'localhost';
 
 -- Allow inserting new users (for registration)
-GRANT INSERT (userID, FirstName, LastName, Password, Email, Role) 
+GRANT INSERT (userID, FirstName, LastName, Password, Email, Role, SecurityQuestion,SecurityAnswerHash) 
 ON dbadm.USERS TO 'public_user'@'localhost';
+
+
 
 FLUSH PRIVILEGES;
 

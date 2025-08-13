@@ -144,8 +144,8 @@ if (!empty($newPassword)) {
     }
     // Step 5: Enforce cooldown
     elseif (!empty($userData['LastPasswordChange']) &&
-        strtotime($userData['LastPasswordChange']) > strtotime('-1 minute')) {
-        $error_message = "❌ Password can only be changed once every minute.";
+        strtotime($userData['LastPasswordChange']) > strtotime('-1 day')) { //-1 minute
+        $error_message = "❌ Password can only be changed once every day.";
     }
     else {
         // Step 6: Check against password history

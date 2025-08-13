@@ -38,9 +38,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $result->fetch_assoc();
             $stmt->close();
 
-            // Save previous last-login timestamp (may be NULL)
+            // Save previous last-login timestamp 
             if ($user) {
-                // Store the *previous* last attempt info before updating
+                // Store the previous last attempt info before updating
                 $_SESSION['prevLastAttempt'] = $user['LastLoginAttempt'];
                 $_SESSION['prevLastStatus']  = $user['LastLoginStatus'];
 
@@ -66,8 +66,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             } else {
                 // Password verification
-                // if ($user && password_verify($password, $user['Password'])) {
-                if ($password === $user['Password']) {
+                if ($user && password_verify($password, $user['Password'])) {
+                // if ($password === $user['Password']) {
                     // Successful login — reset counters
                     $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = 0, LockoutUntil = NULL, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'successful' WHERE Email = ?");
                     $upd->bind_param("sss", $now, $ip, $email_prefill);
@@ -101,21 +101,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         exit();
                     }
                 } else {
-                    // Failed login: increment failed attempts (if user exists) and record attempt
+                    // Failed login increment failed attempts and record attempt
                     if ($user) {
                         $newAttempts = $failedAttempts + 1;
-                        if ($newAttempts >= 5) {
-                            $newLockout = date("Y-m-d H:i:s", time() + 60); // 1 minute
-                            $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LockoutUntil = ?, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
+
+                        // Progressive lock
+                        $maxAttempts = 5;          // threshold before lockout
+                        $baseLockout = 300;        // 5 minutes in seconds
+                        $lockoutCap  = 86400;      // 1 day
+                        $nowTime     = time();
+                        $lockoutTime = strtotime($lockoutUntil);
+
+                        if ($newAttempts >= $maxAttempts) {
+                            // Always increment attempts, even if locked
+                            if ($lockoutUntil && $lockoutTime > $nowTime) {
+                                $newAttempts = $failedAttempts + 1; // keep counting attempts during lockout
+                                $startTime = $lockoutTime; // extend from current lockout
+                            } else {
+                                $startTime = $nowTime; // start new lockout
+                            }
+
+                            // Progressive: each attempt after threshold doubles time, capped at 1 day
+                            $lockoutMultiplier = $newAttempts - $maxAttempts + 1; 
+                            $lockoutDuration   = min($baseLockout * pow(2, $lockoutMultiplier - 1), $lockoutCap);
+
+                            $newLockout = date("Y-m-d H:i:s", $startTime + $lockoutDuration);
+
+                            $upd = $conn->prepare("UPDATE USERS 
+                                                  SET FailedAttempts = ?, LockoutUntil = ?, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' 
+                                                  WHERE Email = ?");
                             $upd->bind_param("issss", $newAttempts, $newLockout, $now, $ip, $email_prefill);
-                            $logger->logAuthFailure("Account locked after $newAttempts failed attempts", $email_prefill);
+
+                            // LOGGING: account locked
+                            $logger->logAuthFailure("Account locked until $newLockout after $newAttempts failed attempts", $email_prefill);
                         } else {
+                            // Just update failed attempts without locking
                             $upd = $conn->prepare("UPDATE USERS SET FailedAttempts = ?, LastLoginAttempt = ?, LastLoginIP = ?, LastLoginStatus = 'unsuccessful' WHERE Email = ?");
                             $upd->bind_param("isss", $newAttempts, $now, $ip, $email_prefill);
                         }
                         $upd->execute();
                         $upd->close();
-                        $logger->logAuthFailure("Invalid password attempt: ($newAttempts/5).", $email_prefill);
+
+                        // LOGGING invalid attempt
+                        $logger->logAuthFailure("Invalid password attempt: ($newAttempts/$maxAttempts).", $email_prefill);
                     } else {
                         // Dummy verify to even out timing
                         password_verify($password, password_hash("fake-password", PASSWORD_DEFAULT));
@@ -130,6 +158,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 
 
 <!DOCTYPE html>

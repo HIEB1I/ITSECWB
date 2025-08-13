@@ -6,7 +6,6 @@ require_once 'db_connect.php';
 require_once 'validation.php';
 require_once 'security_logger.php';
 
-session_start();
 $logger = new SecurityLogger($conn);
 date_default_timezone_set('Asia/Manila');
 
