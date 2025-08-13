@@ -19,45 +19,62 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $userID = generateUserID($conn);
-    $firstName = $_POST['firstName'];
-    $lastName = $_POST['lastName'];
-    $email = $_POST['email'];
-       // Enforce password complexity & length
+    $firstName = trim($_POST['firstName']);
+    $lastName = trim($_POST['lastName']);
+    $email = trim($_POST['email']);
+    $address = trim($_POST['address']);
+    $role = $_POST['role'];
+    $createdAt = $_POST['joined'];
+
+    // Password complexity validation
     $passwordPlain = $_POST['password'] ?? '';
     $minLength = 8;
-
     if (
         strlen($passwordPlain) < $minLength ||
-        !preg_match('/[A-Z]/', $passwordPlain) ||  // Uppercase
-        !preg_match('/[a-z]/', $passwordPlain) ||  // Lowercase
-        !preg_match('/[0-9]/', $passwordPlain) ||  // Number
-        !preg_match('/[\W]/', $passwordPlain)      // Special char
+        !preg_match('/[A-Z]/', $passwordPlain) ||
+        !preg_match('/[a-z]/', $passwordPlain) ||
+        !preg_match('/[0-9]/', $passwordPlain) ||
+        !preg_match('/[\W]/', $passwordPlain)
     ) {
         die("❌ Password must be at least $minLength characters long and include uppercase, lowercase, number, and special character.");
     }
-    // Store strong salted hash using password_hash (built-in salt)
-    // Hash the password (bcrypt with salt automatically handled)
     $password = password_hash($passwordPlain, PASSWORD_DEFAULT);
-    $role = $_POST['role'];
-    $address = $_POST['address'];
-    $createdAt = $_POST['joined'];
 
-    $stmt = $conn->prepare("INSERT INTO USERS (userID, FirstName, LastName, Password, Email, Address, Role, Created_At)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-    $stmt->bind_param("ssssssss", $userID, $firstName, $lastName, $password, $email, $address, $role, $createdAt);
+    // Security question and answer
+    $security_question = trim($_POST['security_question']);
+    $security_answer_plain = trim($_POST['security_answer']);
+
+    $common_answers = ["dog", "cat", "blue", "pizza", "the bible", "1234", "password", "qwerty"];
+    if (
+        strlen($security_answer_plain) < 6 ||
+        in_array(strtolower($security_answer_plain), $common_answers) ||
+        ctype_digit($security_answer_plain)
+    ) {
+        die("❌ Security answer is too easy to guess. Try something more unique.");
+    }
+    $security_answer_hash = password_hash($security_answer_plain, PASSWORD_DEFAULT);
+
+    // Insert into DB
+    $stmt = $conn->prepare("INSERT INTO USERS 
+        (userID, FirstName, LastName, Password, Email, Address, Role, Created_At, SecurityQuestion, SecurityAnswerHash)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssssssss", 
+        $userID, $firstName, $lastName, $password, $email, $address, $role, $createdAt, $security_question, $security_answer_hash
+    );
 
     if ($stmt->execute()) {
-        $success = " User added successfully.";
+        $success = "User added successfully.";
         header("Location: ADMIN_ManageUsers.php");
         exit();
     } else {
-        $error = " Failed to add user: " . $stmt->error;
+        $error = "Failed to add user: " . $stmt->error;
     }
 
     $stmt->close();
     $conn->close();
 }
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -336,6 +353,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="Staff">Staff</option>
         <option value="Customer">Customer</option>
       </select>
+      
+      <label for="security_question">Security Question:</label>
+      <select id="security_question" name="security_question" required>
+          <option value="">-- Select a Security Question --</option>
+          <option value="favorite_snack_child">What was your favorite snack or candy as a child?</option>
+          <option value="elementary_school_name">What was the name of your elementary school?</option>
+          <option value="favorite_board_game_child">What was the name of your favorite board game growing up?</option>
+          <option value="nickname">What is the nickname only your family calls you?</option>
+          <option value="first_stuff_animal">What was the name of your first stuffed animal?</option>
+          <option value="first_crush_fullname">What is the full name of the first person you had a crush on?</option>
+      </select>
+
+      <label for="security_answer">Security Answer:</label>
+      <input type="text" id="security_answer" name="security_answer" required>
 
       <label for="joined">Joined Date:</label>
       <input type="date" id="joined" name="joined" required>

@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['reset_user_id'] = $user_id;
             $_SESSION['reset_email'] = $email_prefill;
         } else {
-            $error_message = "❌ No account found with that email.";
+            $error_message = "❌ No account found with that email."; 
         }
     }
 
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $security_question = ''; // hide the question if wrong for security
             }
         } else {
-            $error_message = "❌ Session expired. Please start over.";
+            $error_message = "❌ Session expired. Please start over."; // shows only if $_SESSION['reset_user_id'] is missing.
             $step = 1;
         }
     }

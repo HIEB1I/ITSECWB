@@ -53,13 +53,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     "dog", "cat", "blue", "pizza", "the bible", "1234", "password", "qwerty"
   ];
 
-  if (
+if (
     strlen($security_answer_plain) < 6 ||
     in_array(strtolower($security_answer_plain), $common_answers) ||
     ctype_digit($security_answer_plain)
-  ) {
-    //("❌ Security answer is too easy to guess. Try something more unique.");
-  }
+) {
+    die("❌ Security answer is too easy to guess. Try something more unique.");
+}
+
 
   // Hash the security answer
   $security_answer_hash = password_hash($security_answer_plain, PASSWORD_DEFAULT);
