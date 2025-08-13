@@ -17,27 +17,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $status = $_POST['status'];
     $ship_date = $_POST['ship_date'] ?: null;
 
-    // DATA VALIDATION: validation checks & compile
-    $errors = [];
-
-    // For quantity, numeric and range between 1 and 1000 (example)
-    if (!validateNumber($quantity, 1, 1000)) {
-        $errors[] = "Quantity must be between 1 and 1000.";
-    }
-
-    // For ship_date, just check if length between 0 and 10 (YYYY-MM-DD format length)
-    if ($ship_date !== null && $ship_date !== '') {
-        if (!validateString($ship_date, 10, 10)) {
-            $errors[] = "Ship by date must be in the format YYYY-MM-DD.";
-        }
-    }
-
-    if (!empty($errors)) {
-        $_SESSION['errors'] = $errors;
-        header("Location: ADMIN_EditOrder.php?cartID=" . urlencode($cartID));
-        exit;
-    }
-
     $stmtTotal = $conn->prepare("
         SELECT SUM(P.Price * CI.QuantityOrdered) AS baseTotal
         FROM CART_ITEMS CI
@@ -307,14 +286,6 @@ $r = $res->fetch_assoc();
   <main>
     <form method="POST">
       <div style="background: #f5f5f5; padding: 15px; margin-bottom: 20px; font-weight: bold; text-align: center;">EDIT ORDER</div>
-
-      <!-- DATA VALIDATION: display compiled errors -->
-      <?php if (!empty($_SESSION['errors'])): ?>
-        <ul style="color:red;">
-          <?php foreach ($_SESSION['errors'] as $error) echo "<li>$error</li>"; ?>
-        </ul>
-          <?php unset($_SESSION['errors']); ?>
-      <?php endif; ?>
 
       <p><strong>ORDER ID:</strong> <?= htmlspecialchars($r['cartID']) ?></p>
       <p><strong>USER ID:</strong> <?= htmlspecialchars($r['ref_userID']) ?></p>
