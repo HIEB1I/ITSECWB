@@ -30,8 +30,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'favorite_snack_child' => 'What was your favorite snack or candy as a child?',
                 'elementary_school_name' => 'What was the name of your elementary school?',
                 'favorite_board_game_child' => 'What was the name of your favorite board game growing up?',
-                'favorite_singer' => 'Who is your favorite singer?',
-                'favorite_tv_show' => 'What is the name of your favorite TV show?',
+                'nickname' => 'What is the nickname only your family calls you?',
+                'first_stuff_animal' => 'What was the name of your first stuffed animal?',
                 'first_crush_fullname' => 'What is the full name of the first person you had a crush on?'
             ];
 

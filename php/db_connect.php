@@ -8,8 +8,14 @@ $host = "localhost";
 $dbname = "dbadm";
 $db_user = "";
 
-// Assign DB user based on role 
-if (isset($_SESSION['role'])) {
+// Allow public access to register.php and forgot_password.php
+$public_pages = ['register.php', 'forgot_password.php'];
+$current_page = basename($_SERVER['PHP_SELF']);
+
+if (in_array($current_page, $public_pages, true)) {
+    $db_user = "public_user"; // low privilege user for registration
+} elseif (isset($_SESSION['role'])) {
+    // Assign DB user based on role 
     switch ($_SESSION['role']) {
         case 'Admin':
             $db_user = "admin_user";
@@ -24,12 +30,7 @@ if (isset($_SESSION['role'])) {
             exit("Access denied."); 
     }
 } else { 
-    // Allow public access to register.php and forgot_password.php
-    if (in_array(basename($_SERVER['PHP_SELF']), ['register.php', 'forgot_password.php'])) {
-        $db_user = "public_user"; // low privilege user for registration
-    } else {
-        exit("Access denied.");
-    }
+    exit("Access denied.");
 }
 
 $conn = new mysqli($host, $db_user, "", $dbname);

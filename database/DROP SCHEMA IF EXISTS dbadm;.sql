@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS USERS (
   SecurityAnswerHash VARCHAR(255) NOT NULL,
   LastLoginAttempt DATETIME NULL,
   LastLoginIP VARCHAR(45) NULL,
-  lastLoginStatus LastLoginStatus VARCHAR(20) NULL
+  LastLoginStatus VARCHAR(20) NULL
 );
 
 CREATE TABLE IF NOT EXISTS PRODUCT (
@@ -447,8 +447,10 @@ CREATE USER 'public_user'@'localhost';
 GRANT SELECT (userID, Email) ON dbadm.USERS TO 'public_user'@'localhost';
 
 -- Allow inserting new users (for registration)
-GRANT INSERT (userID, FirstName, LastName, Password, Email, Role) 
+GRANT INSERT (userID, FirstName, LastName, Password, Email, Role, SecurityQuestion,SecurityAnswerHash) 
 ON dbadm.USERS TO 'public_user'@'localhost';
+
+
 
 FLUSH PRIVILEGES;
 
